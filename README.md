@@ -61,7 +61,9 @@ tafl.log(state)
 ```
 ## API
 You can import these different objects:
+```js
 const { Piece, TaflBoard, TaflRule, TaflRuleSet, Tafl } = require('tafl')
+```
 
 ### Piece
 Used as an enum. Has `__` key for empty places, `PA` for attackers, `PD` for defenders, and `PK` for king.
