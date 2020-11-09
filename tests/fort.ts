@@ -1,4 +1,4 @@
-import { Tafl, Piece } from "../tafl";
+import { Tafl, Piece } from "../index";
 
 const tafl = new Tafl()
 const A = Piece.PA

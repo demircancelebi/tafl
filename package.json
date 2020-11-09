@@ -8,7 +8,7 @@
     "@types/node": "^14.0.27"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node tests/capture.js && node tests/fort.js"
   },
   "author": "Demircan Celebi <demircancelebi@gmail.com>",
   "license": "MIT"

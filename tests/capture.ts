@@ -1,4 +1,4 @@
-import { Tafl, TaflBoard, TaflRuleSet, Piece } from "../tafl";
+import { Tafl, TaflBoard, TaflRuleSet, Piece } from "../index";
 
 const tafl = new Tafl()
 const A = Piece.PA
