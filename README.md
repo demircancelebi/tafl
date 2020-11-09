@@ -4,6 +4,12 @@ A Typescript library for Hnefatafl (Viking Chess, or Tafl) that is used for move
 
 You can use it to simulate games between AI agents - although you need to write the agents yourself :)
 
+## Installation
+
+```
+npm install tafl
+```
+
 ## Features
 These behaviors can be modified with rules:
 
