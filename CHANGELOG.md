@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.2.0](https://github.com/demircancelebi/tafl/compare/v2.1.3...v2.2.0) (2020-11-16)
+
+
+### Features
+
+* **game rules:** add support for checking equivalent board states (rotations/symmetries) ([9e61d6c](https://github.com/demircancelebi/tafl/commit/9e61d6c96338f3127f15c2fd8d89f0ae15aec9a0))
+
 ### [2.1.3](https://github.com/demircancelebi/tafl/compare/v2.1.2...v2.1.3) (2020-11-16)
 
 ### [2.1.2](https://github.com/demircancelebi/tafl/compare/v2.1.1...v2.1.2) (2020-11-16)
