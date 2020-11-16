@@ -13,12 +13,6 @@ npm install tafl
 ## Features
 These behaviors can be modified with rules:
 
-| Tables        | Are           | Cool  |
-| ------------- |:-------------:| -----:|
-| col 3 is      | right-aligned | $1600 |
-| col 2 is      | centered      |   $12 |
-| zebra stripes | are neat      |    $1 |
-
 - [X] Exit forts
 - [X] Shieldwall captures
 - [X] King can escape from edges (in addition to corners, usually used in smaller boards)
