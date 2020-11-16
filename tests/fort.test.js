@@ -21,7 +21,9 @@ const topTestBoard = {
         [_, _, _, D, _, _, _, D, _, _, _],
     ]
 };
-const topTest = tafl.fortSearchFromKing(topTestBoard, { r: 0, c: 4 }) === true;
+test("fort check", () => {
+    expect(tafl.fortSearchFromKing(topTestBoard, { r: 0, c: 4 })).toBe(true);
+});
 const bottomSimpleTestBoard = {
     board: [
         [_, _, _, _, _, _, _, _, _, _, _],
@@ -37,7 +39,9 @@ const bottomSimpleTestBoard = {
         [_, D, _, _, D, K, _, D, _, D, _],
     ]
 };
-const bottomSimpleTest = tafl.fortSearchFromKing(bottomSimpleTestBoard, { r: 10, c: 5 }) === true;
+test("fort check", () => {
+    expect(tafl.fortSearchFromKing(bottomSimpleTestBoard, { r: 10, c: 5 })).toBe(true);
+});
 const bottomTwoFortsTestBoard = {
     board: [
         [_, _, _, _, _, _, _, _, _, _, _],
@@ -53,7 +57,9 @@ const bottomTwoFortsTestBoard = {
         [_, D, _, D, _, K, _, D, _, D, _],
     ]
 };
-const bottomTwoFortsTest = tafl.fortSearchFromKing(bottomTwoFortsTestBoard, { r: 10, c: 5 }) === false;
+test("fort check", () => {
+    expect(tafl.fortSearchFromKing(bottomTwoFortsTestBoard, { r: 10, c: 5 })).toBe(false);
+});
 const bottomEyeFortsTestBoard = {
     board: [
         [_, _, _, _, _, _, _, _, _, _, _],
@@ -69,7 +75,9 @@ const bottomEyeFortsTestBoard = {
         [_, D, D, D, D, K, _, D, _, D, _],
     ]
 };
-const bottomEyeFortsTest = tafl.fortSearchFromKing(bottomEyeFortsTestBoard, { r: 10, c: 5 }) === true;
+test("fort check", () => {
+    expect(tafl.fortSearchFromKing(bottomEyeFortsTestBoard, { r: 10, c: 5 })).toBe(true);
+});
 const bottomUnsafeAlmostEyeFortsBoard = {
     board: [
         [_, _, _, _, _, _, _, _, _, _, _],
@@ -85,7 +93,9 @@ const bottomUnsafeAlmostEyeFortsBoard = {
         [_, D, D, D, D, K, _, D, _, D, _],
     ]
 };
-const bottomUnsafeAlmostEyeForts = tafl.fortSearchFromKing(bottomUnsafeAlmostEyeFortsBoard, { r: 10, c: 5 }) === false;
+test("fort check", () => {
+    expect(tafl.fortSearchFromKing(bottomUnsafeAlmostEyeFortsBoard, { r: 10, c: 5 })).toBe(false);
+});
 const rightExitTestBoard = {
     board: [
         [_, _, _, _, _, _, _, _, _, _, _],
@@ -101,7 +111,9 @@ const rightExitTestBoard = {
         [_, D, _, _, D, _, _, D, _, D, _],
     ]
 };
-const rightExitTest = tafl.fortSearchFromKing(rightExitTestBoard, { r: 4, c: 10 }) === true;
+test("fort check", () => {
+    expect(tafl.fortSearchFromKing(rightExitTestBoard, { r: 4, c: 10 })).toBe(true);
+});
 const rightBottomNotAFortTestBoard = {
     board: [
         [_, _, _, _, _, _, _, _, _, _, _],
@@ -117,7 +129,9 @@ const rightBottomNotAFortTestBoard = {
         [_, D, _, _, D, _, _, D, _, D, _],
     ]
 };
-const rightBottomNotAFortTest = tafl.fortSearchFromKing(rightBottomNotAFortTestBoard, { r: 4, c: 10 }) === false;
+test("fort check", () => {
+    expect(tafl.fortSearchFromKing(rightBottomNotAFortTestBoard, { r: 4, c: 10 })).toBe(false);
+});
 const rightExitUnsafeTestBoard = {
     board: [
         [_, _, _, _, _, _, _, _, _, _, _],
@@ -133,23 +147,7 @@ const rightExitUnsafeTestBoard = {
         [_, D, _, _, D, _, _, D, _, D, _],
     ]
 };
-const rightExitUnsafeTest = tafl.fortSearchFromKing(rightExitUnsafeTestBoard, { r: 4, c: 10 }) === false;
-const tests = {
-    topTest,
-    bottomSimpleTest,
-    bottomTwoFortsTest,
-    bottomEyeFortsTest,
-    bottomUnsafeAlmostEyeForts,
-    rightExitTest,
-    rightBottomNotAFortTest,
-    rightExitUnsafeTest
-};
-const failures = Object.keys(tests).filter(k => (!tests[k]));
-if (failures.length === 0) {
-    console.log(`All ${Object.keys(tests).length} fort tests are passing`);
-}
-else {
-    console.log("Failing tests:");
-    console.log(failures.join(", "));
-}
-//# sourceMappingURL=fort.js.map
+test("fort check", () => {
+    expect(tafl.fortSearchFromKing(rightExitUnsafeTestBoard, { r: 4, c: 10 })).toBe(false);
+});
+//# sourceMappingURL=fort.test.js.map

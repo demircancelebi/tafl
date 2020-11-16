@@ -13,6 +13,12 @@ npm install tafl
 ## Features
 These behaviors can be modified with rules:
 
+| Tables        | Are           | Cool  |
+| ------------- |:-------------:| -----:|
+| col 3 is      | right-aligned | $1600 |
+| col 2 is      | centered      |   $12 |
+| zebra stripes | are neat      |    $1 |
+
 - [X] Exit forts
 - [X] Shieldwall captures
 - [X] King can escape from edges (in addition to corners, usually used in smaller boards)
@@ -21,6 +27,7 @@ These behaviors can be modified with rules:
 - [X] Attackers can capture with 2, 3, or 4 pieces
 - [X] Game starts with attackers or defenders
 - [X] Width of corners, usually corners are one piece, but in Alea Evangelii variation, corners are 2x2
+- [X] Repetition turn limit (On copenhagen game draws on [Threefold repetition](https://en.wikipedia.org/wiki/Threefold_repetition), you can modify this number)
 
 ## Basic example
 Uses Copenhagen rules on 11x11 board, plays both sides with random agent
@@ -38,19 +45,10 @@ while (!state.result.finished) {
   state = tafl.act(state, randomAction)
 }
 
-tafl.log(state)
+tafl.log({ turn: state.turn, result: state.result, lastAction: state.lastAction, board: state.board })
 // -> { turn: 604,
 //      result: { finished: true, winner: 'Defender', desc: 'King escaped from corner' },
 //      lastAction: { from: { r: 10, c: 2 }, to: { r: 10, c: 0 } },
-//      rules:
-//       { kingIsArmed: true,
-//         kingCanReturnToCenter: true,
-//         attackerCountToCapture: 4,
-//         shieldWalls: true,
-//         exitForts: true,
-//         edgeEscape: false,
-//         cornerBaseWidth: 1,
-//         startingSide: 'Attacker' },
 //      board:
 //       [ [ ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' ],
 //         [ ' ', ' ', ' ', ' ', ' ', 'A', ' ', ' ', ' ', ' ', ' ' ],
@@ -103,6 +101,7 @@ Used as an enum, and maps to string values. Use these to change the behavior of 
 - `TaflRule.EDGE_ESCAPE`
 - `TaflRule.CORNER_BASE_WIDTH`
 - `TaflRule.STARTING_SIDE`
+- `TaflRule.REPETITION_TURN_LIMIT`
 
 ### TaflRuleSet
 Used as an enum, used for grouping rules to access with a single name. Only has `COPENHAGEN` value for now. See examples for usage.
@@ -132,19 +131,10 @@ while (!state.result.finished) {
   state = tafl.act(state, randomAction)
 }
 
-tafl.log(state)
+tafl.log({ turn: state.turn, result: state.result, lastAction: state.lastAction, board: state.board })
 // -> { turn: 12,
 //      result: { finished: true, winner: 'Defender', desc: 'King escaped from edge' },
 //      lastAction: { from: { r: 4, c: 3 }, to: { r: 4, c: 6 } },
-//      rules:
-//       { kingIsArmed: true,
-//         kingCanReturnToCenter: true,
-//         attackerCountToCapture: 4,
-//         shieldWalls: true,
-//         exitForts: true,
-//         edgeEscape: true,
-//         cornerBaseWidth: 2,
-//         startingSide: 'Attacker' },
 //      board:
 //       [ [ ' ', ' ', 'A', 'A', 'D', ' ', ' ' ],
 //         [ ' ', ' ', ' ', ' ', ' ', ' ', ' ' ],
@@ -160,6 +150,8 @@ Full list of methods and properties, taken from type definitions file and is sub
 
 ```js
 name: string;
+controlMap: Map<TaflSide, Set<Piece>>;
+sideMap: Map<Piece, TaflSide>;
 initialState(init?: any): GameState;
 log(thing: any): void;
 isCenter(state: any, coords: Coords): boolean;
@@ -192,8 +184,6 @@ isDfOrKing(state: any, coords: Coords): boolean;
 canHelpCapture(state: any, coords: Coords, canHelp: TaflSide): boolean;
 turnSide(state: any): TaflSide;
 opponentSide(state: any): TaflSide;
-controlMap: Map<TaflSide, Set<Piece>>;
-sideMap: Map<Piece, TaflSide>;
 canControl(side: TaflSide, piece: Piece): boolean;
 sideOfPiece(piece: Piece): TaflSide;
 pieceAt(state: any, coords: Coords): Piece;
@@ -203,15 +193,16 @@ canMakeAMove(state: any, side: TaflSide): boolean;
 getKingCoords(state: any): Coords;
 didAttackersSurroundDefenders(state: any): boolean;
 fortSearchFromKing(state: any, kingCoords: Coords): boolean;
-getPossibleActions(state: any, side?: TaflSide): Array<MoveAction>;
-// Given a state, returns all possible actions that can be chosen
-isActionPossible(state: any, act: MoveAction): boolean | never;
-// Returns true if action is possible in given state, throws an error otherwise
-isGameOver(state: any): typeof state;
-// Given a state, returns new state with game over information. If game is over, returned state object will have `{result: { finished: true }}` with additional information like `result.winner` and `result.desc`.
 canBeCaptured(state: any, coords: Coords, side: TaflSide): boolean;
 checkCaptures(state: any): Array<Coords>;
 checkShieldWalls(state: any): Array<Coords>;
+getBoardHash(state: any): string;
+getPossibleActions(state: any, side?: TaflSide): Array<MoveAction>;
+// Given a state, returns all possible actions that can be chosen
+isActionPossible(state: any, act: MoveAction): boolean;
+// Returns true if action is possible in given state, false otherwise
+isGameOver(state: any): typeof state;
+// Given a state, returns new state with game over information. If game is over, returned state object will have `{result: { finished: true }}` with additional information like `result.winner` and `result.desc`.
 act(state: any, moveAction: MoveAction): typeof state;
 // Given a state and an action, applies that action and returns the new state.
 ```

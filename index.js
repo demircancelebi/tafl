@@ -1,5 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.TaflRuleSet = exports.TaflRule = exports.TaflBoard = exports.Tafl = exports.Piece = void 0;
+const crypto_1 = __importDefault(require("crypto"));
 class Player {
 }
 class Side extends String {
@@ -162,6 +167,7 @@ exports.TaflRule = TaflRule;
 TaflRule.KING_IS_ARMED = 'kingIsArmed';
 TaflRule.KING_CAN_RETURN_TO_CENTER = 'kingCanReturnToCenter';
 TaflRule.ATTACKER_COUNT_TO_CAPTURE = 'attackerCountToCapture';
+TaflRule.REPETITION_TURN_LIMIT = 'repetitionTurnLimit';
 TaflRule.SHIELD_WALLS = 'shieldWalls';
 TaflRule.EXIT_FORTS = 'exitForts';
 TaflRule.EDGE_ESCAPE = 'edgeEscape';
@@ -174,6 +180,7 @@ TaflRuleSet.COPENHAGEN = {
     [TaflRule.KING_IS_ARMED]: true,
     [TaflRule.KING_CAN_RETURN_TO_CENTER]: true,
     [TaflRule.ATTACKER_COUNT_TO_CAPTURE]: 4,
+    [TaflRule.REPETITION_TURN_LIMIT]: 3,
     [TaflRule.SHIELD_WALLS]: true,
     [TaflRule.EXIT_FORTS]: true,
     [TaflRule.EDGE_ESCAPE]: false,
@@ -194,18 +201,22 @@ class Tafl {
         ]);
     }
     initialState(init) {
-        var _a, _b;
+        const board = (init === null || init === void 0 ? void 0 : init.board) || TaflBoard._11_CLASSIC;
+        const hash = this.getBoardHash({ board });
         const initialState = {
             turn: 0,
+            actions: [],
+            boardHistory: { [hash]: 1 },
             result: {
                 finished: false,
                 winner: null,
                 desc: ''
             },
             lastAction: null,
-            rules: ((_a = init) === null || _a === void 0 ? void 0 : _a.rules) || TaflRuleSet.COPENHAGEN,
-            board: ((_b = init) === null || _b === void 0 ? void 0 : _b.board) || TaflBoard._11_CLASSIC
+            rules: (init === null || init === void 0 ? void 0 : init.rules) || TaflRuleSet.COPENHAGEN,
+            board
         };
+        // this.log(initialState)
         return initialState;
     }
     log(thing) {
@@ -687,44 +698,58 @@ class Tafl {
     }
     isActionPossible(state, act) {
         if (act.from.r !== act.to.r && act.from.c !== act.to.c) {
-            throw new Error("Move should be in the same row or column");
+            this.log("Move should be in the same row or column");
+            return false;
         }
         const f = act.from;
         const from = this.pieceAt(state, f);
         if (this.isEmpty(state, f)) {
-            throw new Error(`There is no piece at [${f.r}, ${f.c}]`);
+            this.log(`There is no piece at [${f.r}, ${f.c}]`);
+            return false;
         }
         const side = this.turnSide(state);
         if (!this.canControl(side, from)) {
-            throw new Error(`You can not control the piece at [${f.r}, ${f.c}]`);
+            this.log(`You can not control the piece at [${f.r}, ${f.c}]`);
+            return false;
         }
         const t = act.to;
         if (!this.isEmpty(state, t)) {
-            throw new Error(`There is already a piece at [${t.r}, ${t.c}]`);
+            this.log(`There is already a piece at [${t.r}, ${t.c}]`);
+            return false;
         }
         const possibleCoords = this.getPossibleMovesFrom(state, f);
         const isPossible = possibleCoords.find(pc => pc.r === t.r && pc.c === t.c);
         if (isPossible) {
             return true;
         }
-        throw new Error(`Move [${f.r}, ${f.c}] -> [${t.r}, ${t.c}] is not possible`);
+        this.log(`Move [${f.r}, ${f.c}] -> [${t.r}, ${t.c}] is not possible`);
+        return false;
     }
     isGameOver(state) {
-        var _a, _b, _d, _e, _f, _g, _h, _j, _k, _l, _m;
+        var _a;
         const to = (_a = state.lastAction) === null || _a === void 0 ? void 0 : _a.to;
         if (!to) {
             return Object.assign({}, state, {
                 result: Object.assign(Object.assign({}, state.result), { finished: false })
             });
         }
+        if (state.boardHistory[this.getBoardHash(state)] === state.rules[TaflRule.REPETITION_TURN_LIMIT]) {
+            return Object.assign({}, state, {
+                result: {
+                    winner: null,
+                    desc: 'Draw on repetition',
+                    finished: true
+                }
+            });
+        }
         const side = this.turnSide(state);
         if (side === TaflSide.ATTACKER) { // King should be captured or all defenders should be surrounded
             const n = state.board.length;
             let [kingOnTop, kingOnRight, kingOnBottom, kingOnLeft] = [false, false, false, false];
-            kingOnTop = ((_b = to) === null || _b === void 0 ? void 0 : _b.r) > 1 && this.isKing(state, { r: to.r - 1, c: to.c });
-            kingOnBottom = ((_d = to) === null || _d === void 0 ? void 0 : _d.r) < n - 2 && this.isKing(state, { r: to.r + 1, c: to.c });
-            kingOnLeft = ((_e = to) === null || _e === void 0 ? void 0 : _e.c) > 1 && this.isKing(state, { r: to.r, c: to.c - 1 });
-            kingOnRight = ((_f = to) === null || _f === void 0 ? void 0 : _f.c) < n - 2 && this.isKing(state, { r: to.r, c: to.c + 1 });
+            kingOnTop = (to === null || to === void 0 ? void 0 : to.r) > 1 && this.isKing(state, { r: to.r - 1, c: to.c });
+            kingOnBottom = (to === null || to === void 0 ? void 0 : to.r) < n - 2 && this.isKing(state, { r: to.r + 1, c: to.c });
+            kingOnLeft = (to === null || to === void 0 ? void 0 : to.c) > 1 && this.isKing(state, { r: to.r, c: to.c - 1 });
+            kingOnRight = (to === null || to === void 0 ? void 0 : to.c) < n - 2 && this.isKing(state, { r: to.r, c: to.c + 1 });
             let kingPosition = null;
             if (kingOnTop) {
                 kingPosition = { r: to.r - 1, c: to.c };
@@ -738,8 +763,8 @@ class Tafl {
             else if (kingOnLeft) {
                 kingPosition = { r: to.r, c: to.c - 1 };
             }
-            if (((_g = kingPosition) === null || _g === void 0 ? void 0 : _g.r) > 0 && ((_h = kingPosition) === null || _h === void 0 ? void 0 : _h.r) < n - 1 && ((_j = kingPosition) === null || _j === void 0 ? void 0 : _j.c) > 0 && ((_k = kingPosition) === null || _k === void 0 ? void 0 : _k.c) < n - 1) {
-                const [kr, kc] = [(_l = kingPosition) === null || _l === void 0 ? void 0 : _l.r, (_m = kingPosition) === null || _m === void 0 ? void 0 : _m.c];
+            if ((kingPosition === null || kingPosition === void 0 ? void 0 : kingPosition.r) > 0 && (kingPosition === null || kingPosition === void 0 ? void 0 : kingPosition.r) < n - 1 && (kingPosition === null || kingPosition === void 0 ? void 0 : kingPosition.c) > 0 && (kingPosition === null || kingPosition === void 0 ? void 0 : kingPosition.c) < n - 1) {
+                const [kr, kc] = [kingPosition === null || kingPosition === void 0 ? void 0 : kingPosition.r, kingPosition === null || kingPosition === void 0 ? void 0 : kingPosition.c];
                 const tSurrounded = this.canHelpCapture(state, { r: kr - 1, c: kc }, side) ? 1 : 0;
                 const bSurrounded = this.canHelpCapture(state, { r: kr + 1, c: kc }, side) ? 1 : 0;
                 const lSurrounded = this.canHelpCapture(state, { r: kr, c: kc - 1 }, side) ? 1 : 0;
@@ -920,6 +945,10 @@ class Tafl {
         }
         return res;
     }
+    getBoardHash(state) {
+        const data = state.board.reduce((acc, cur) => acc + cur.join(''), '');
+        return crypto_1.default.createHash('sha1').update(data).digest('base64');
+    }
     act(state, moveAction) {
         if (!this.isActionPossible(state, moveAction)) {
             return state;
@@ -927,11 +956,13 @@ class Tafl {
         const boardCopy = state.board.map(function (arr) {
             return arr.slice();
         });
+        const actionsCopy = state.actions.slice();
         const fr = moveAction.from.r;
         const fc = moveAction.from.c;
         boardCopy[moveAction.to.r][moveAction.to.c] = this.pieceAt(state, moveAction.from);
         boardCopy[fr][fc] = Piece.__;
-        const playerMovedState = Object.assign({}, state, { lastAction: moveAction }, { board: boardCopy });
+        actionsCopy.push(moveAction);
+        const playerMovedState = Object.assign({}, state, { actions: actionsCopy }, { lastAction: moveAction }, { board: boardCopy });
         const captureds = this.checkCaptures(playerMovedState);
         if (captureds.length > 0) {
             for (const capturedCoords of captureds) {
@@ -939,7 +970,14 @@ class Tafl {
             }
         }
         const capturedPiecesState = Object.assign({}, playerMovedState, { board: boardCopy });
-        const gameOverState = this.isGameOver(capturedPiecesState);
+        const boardHash = this.getBoardHash(state);
+        const boardHistoryCopy = Object.assign({}, state.boardHistory);
+        if (!(boardHash in boardHistoryCopy)) {
+            boardHistoryCopy[boardHash] = 0;
+        }
+        boardHistoryCopy[boardHash] += 1;
+        const boardHashSavedState = Object.assign({}, capturedPiecesState, { boardHistory: boardHistoryCopy });
+        const gameOverState = this.isGameOver(boardHashSavedState);
         return Object.assign({}, gameOverState, { turn: state.turn + 1 });
     }
 }

@@ -1,3 +1,6 @@
+import { cursorTo } from "readline"
+import crypto from "crypto"
+
 interface Named {
   name: String
 }
@@ -35,6 +38,8 @@ interface Game extends Named {
 
 interface GameState {
   board: Board
+  actions: Array<GameAction>
+  boardHistory: Object
   turn: number
   result: {
     finished: boolean
@@ -212,6 +217,7 @@ class TaflRule extends Rule {
   static readonly KING_IS_ARMED = 'kingIsArmed'
   static readonly KING_CAN_RETURN_TO_CENTER = 'kingCanReturnToCenter'
   static readonly ATTACKER_COUNT_TO_CAPTURE = 'attackerCountToCapture'
+  static readonly REPETITION_TURN_LIMIT = 'repetitionTurnLimit'
   static readonly SHIELD_WALLS = 'shieldWalls'
   static readonly EXIT_FORTS = 'exitForts'
   static readonly EDGE_ESCAPE = 'edgeEscape'
@@ -224,6 +230,7 @@ class TaflRuleSet extends RuleSet {
     [TaflRule.KING_IS_ARMED]: true,
     [TaflRule.KING_CAN_RETURN_TO_CENTER]: true,
     [TaflRule.ATTACKER_COUNT_TO_CAPTURE]: 4,
+    [TaflRule.REPETITION_TURN_LIMIT]: 3,
     [TaflRule.SHIELD_WALLS]: true,
     [TaflRule.EXIT_FORTS]: true,
     [TaflRule.EDGE_ESCAPE]: false,
@@ -235,9 +242,24 @@ class TaflRuleSet extends RuleSet {
 class Tafl implements Game {
   name = "Tafl"
 
+  controlMap = new Map<TaflSide, Set<Piece>>([
+    [TaflSide.ATTACKER, new Set([Piece.PA])],
+    [TaflSide.DEFENDER, new Set([Piece.PD, Piece.PK])]
+  ])
+
+  sideMap = new Map<Piece, TaflSide>([
+    [Piece.PA, TaflSide.ATTACKER],
+    [Piece.PD, TaflSide.DEFENDER],
+    [Piece.PK, TaflSide.DEFENDER],
+  ])
+
   initialState(init?): GameState {
+    const board = init?.board || TaflBoard._11_CLASSIC
+    const hash = this.getBoardHash({ board })
     const initialState: GameState = {
       turn: 0,
+      actions: [],
+      boardHistory: { [hash]: 1 },
       result: {
         finished: false,
         winner: null,
@@ -245,7 +267,7 @@ class Tafl implements Game {
       },
       lastAction: null,
       rules: init?.rules || TaflRuleSet.COPENHAGEN,
-      board: init?.board || TaflBoard._11_CLASSIC
+      board
     }
 
     return initialState
@@ -546,17 +568,6 @@ class Tafl implements Game {
     return (turnSide === TaflSide.ATTACKER) ? TaflSide.DEFENDER : TaflSide.ATTACKER
   }
 
-  controlMap = new Map<TaflSide, Set<Piece>>([
-    [TaflSide.ATTACKER, new Set([Piece.PA])],
-    [TaflSide.DEFENDER, new Set([Piece.PD, Piece.PK])]
-  ])
-
-  sideMap = new Map<Piece, TaflSide>([
-    [Piece.PA, TaflSide.ATTACKER],
-    [Piece.PD, TaflSide.DEFENDER],
-    [Piece.PK, TaflSide.DEFENDER],
-  ])
-
   canControl(side: TaflSide, piece: Piece): boolean {
     return !!(this.controlMap.get(side) && this.controlMap.get(side).has(piece))
   }
@@ -697,6 +708,123 @@ class Tafl implements Game {
     return true
   }
 
+  canBeCaptured(state, coords: Coords, side: TaflSide): boolean {
+    const mid = this.sideOfPiece(this.pieceAt(state, coords))
+    return ((side === TaflSide.ATTACKER && mid === TaflSide.DEFENDER && !this.isKing(state, coords)) || (side === TaflSide.DEFENDER && mid === TaflSide.ATTACKER))
+  }
+
+  checkCaptures(state): Array<Coords> {
+    let res: Array<Coords> = []
+    const [lpr, lpc] = [state.lastAction.to.r, state.lastAction.to.c]
+    const side = this.turnSide(state)
+
+    if (lpr >= 2 && this.canHelpCapture(state, { r: lpr - 2, c: lpc }, side) && this.canBeCaptured(state, { r: lpr - 1, c: lpc }, side)) {
+      res.push({ r: lpr - 1, c: lpc })
+    }
+    if (lpr <= state.board.length - 3 && this.canHelpCapture(state, { r: lpr + 2, c: lpc }, side) && this.canBeCaptured(state, { r: lpr + 1, c: lpc }, side)) {
+      res.push({ r: lpr + 1, c: lpc })
+    }
+    if (lpc >= 2 && this.canHelpCapture(state, { r: lpr, c: lpc - 2 }, side) && this.canBeCaptured(state, { r: lpr, c: lpc - 1 }, side)) {
+      res.push({ r: lpr, c: lpc - 1 })
+    }
+    if (lpc <= state.board.length - 3 && this.canHelpCapture(state, { r: lpr, c: lpc + 2 }, side) && this.canBeCaptured(state, { r: lpr, c: lpc + 1 }, side)) {
+      res.push({ r: lpr, c: lpc + 1 })
+    }
+
+    if (state.rules[TaflRule.SHIELD_WALLS]) {
+      res.push(...this.checkShieldWalls(state));
+    }
+
+    return res
+  }
+
+  checkShieldWalls(state): Array<Coords> {
+    const res: Array<Coords> = []
+    const side = this.turnSide(state)
+    const [lpr, lpc] = [state.lastAction.to.r, state.lastAction.to.c]
+    const opp = this.opponentSide(state)
+
+    // check top or bottom
+    if (lpr === 0 || lpr === state.board.length - 1) {
+      const [lCaptured, rCaptured] = [[], []]
+      let theCol = lpc - 1;
+      const rowBehind = (lpr === state.board.length - 1) ? state.board.length - 2 : 1;
+
+      while (this.insideBounds(state, { r: lpr, c: theCol })
+        && this.sideOfPiece(this.pieceAt(state, { r: lpr, c: theCol })) === opp
+        && this.insideBounds(state, { r: rowBehind, c: theCol })
+        && this.canHelpCapture(state, { r: rowBehind, c: theCol }, side)) {
+        if (this.sideOfPiece(this.pieceAt(state, { r: lpr, c: theCol })) === opp && !this.isKing(state, { r: lpr, c: theCol })) {
+          lCaptured.push({ r: lpr, c: theCol })
+        }
+        theCol -= 1;
+      }
+
+      if (this.insideBounds(state, { r: lpr, c: theCol }) && this.canHelpCapture(state, { r: lpr, c: theCol }, side)) {
+        res.push(...lCaptured)
+      }
+
+      theCol = lpc + 1;
+
+      while (this.insideBounds(state, { r: lpr, c: theCol })
+        && this.sideOfPiece(this.pieceAt(state, { r: lpr, c: theCol })) === opp
+        && this.insideBounds(state, { r: rowBehind, c: theCol })
+        && this.canHelpCapture(state, { r: rowBehind, c: theCol }, side)) {
+        if (this.sideOfPiece(this.pieceAt(state, { r: lpr, c: theCol })) === opp && !this.isKing(state, { r: lpr, c: theCol })) {
+          rCaptured.push({ r: lpr, c: theCol })
+        }
+        theCol += 1;
+      }
+
+      if (this.insideBounds(state, { r: lpr, c: theCol }) && this.canHelpCapture(state, { r: lpr, c: theCol }, side)) {
+        res.push(...rCaptured);
+      }
+    }
+
+    // check left or right
+    if (lpc === 0 || lpc === state.board.length - 1) {
+      const [bCaptured, tCaptured] = [[], []];
+      let theRow = lpr - 1;
+      const colBehind = (lpc === state.board.length - 1) ? state.board.length - 2 : 1;
+
+      while (this.insideBounds(state, { r: theRow, c: lpc })
+        && this.sideOfPiece(this.pieceAt(state, { r: theRow, c: lpc })) === opp
+        && this.insideBounds(state, { r: theRow, c: colBehind })
+        && this.canHelpCapture(state, { r: theRow, c: colBehind }, side)) {
+        if (this.sideOfPiece(this.pieceAt(state, { r: theRow, c: lpc })) === opp && !this.isKing(state, { r: theRow, c: lpc })) {
+          bCaptured.push({ r: theRow, c: lpc });
+        }
+        theRow -= 1;
+      }
+
+      if (this.insideBounds(state, { r: theRow, c: lpc }) && this.canHelpCapture(state, { r: theRow, c: lpc }, side)) {
+        res.push(...bCaptured);
+      }
+
+      theRow = lpr + 1;
+      while (this.insideBounds(state, { r: theRow, c: lpc })
+        && this.sideOfPiece(this.pieceAt(state, { r: theRow, c: lpc })) === opp
+        && this.insideBounds(state, { r: theRow, c: colBehind })
+        && this.canHelpCapture(state, { r: theRow, c: colBehind }, side)) {
+        if (this.sideOfPiece(this.pieceAt(state, { r: theRow, c: lpc })) === opp && !this.isKing(state, { r: theRow, c: lpc })) {
+          tCaptured.push({ r: theRow, c: lpc });
+        }
+        theRow += 1;
+      }
+
+      if (this.insideBounds(state, { r: theRow, c: lpc }) && this.canHelpCapture(state, { r: theRow, c: lpc }, side)) {
+        res.push(...tCaptured);
+      }
+    }
+
+    return res
+  }
+
+  getBoardHash(state) {
+    const data = state.board.reduce((acc, cur) => acc + cur.join(''), '')
+    return crypto.createHash('sha1').update(data).digest('base64')
+  }
+
   public fortSearchFromKing(state, kingCoords: Coords): boolean {
     const possiblySurroundingDefendersCoords = this.possiblySurrondingDefenders(state, kingCoords)
 
@@ -833,25 +961,29 @@ class Tafl implements Game {
     return res
   }
 
-  public isActionPossible(state, act: MoveAction): boolean | never {
+  public isActionPossible(state, act: MoveAction): boolean {
     if (act.from.r !== act.to.r && act.from.c !== act.to.c) {
-      throw new Error("Move should be in the same row or column")
+      this.log("Move should be in the same row or column")
+      return false
     }
 
     const f = act.from
     const from = this.pieceAt(state, f)
     if (this.isEmpty(state, f)) {
-      throw new Error(`There is no piece at [${f.r}, ${f.c}]`)
+      this.log(`There is no piece at [${f.r}, ${f.c}]`)
+      return false
     }
 
     const side = this.turnSide(state);
     if (!this.canControl(side, from)) {
-      throw new Error(`You can not control the piece at [${f.r}, ${f.c}]`)
+      this.log(`You can not control the piece at [${f.r}, ${f.c}]`)
+      return false
     }
 
     const t = act.to
     if (!this.isEmpty(state, t)) {
-      throw new Error(`There is already a piece at [${t.r}, ${t.c}]`)
+      this.log(`There is already a piece at [${t.r}, ${t.c}]`)
+      return false
     }
 
     const possibleCoords = this.getPossibleMovesFrom(state, f);
@@ -861,7 +993,8 @@ class Tafl implements Game {
       return true;
     }
 
-    throw new Error(`Move [${f.r}, ${f.c}] -> [${t.r}, ${t.c}] is not possible`);
+    this.log(`Move [${f.r}, ${f.c}] -> [${t.r}, ${t.c}] is not possible`);
+    return false
   }
 
   public isGameOver(state): typeof state {
@@ -871,6 +1004,16 @@ class Tafl implements Game {
         result: {
           ...state.result,
           finished: false
+        }
+      })
+    }
+
+    if (state.boardHistory[this.getBoardHash(state)] === state.rules[TaflRule.REPETITION_TURN_LIMIT]) {
+      return Object.assign({}, state, {
+        result: {
+          winner: null,
+          desc: 'Draw on repetition',
+          finished: true
         }
       })
     }
@@ -973,15 +1116,6 @@ class Tafl implements Game {
       }
     }
 
-    // if (state.turn > 50) {
-    //   return Object.assign({}, state, {
-    //     result: {
-    //       finished: true,
-    //       winner: this.turnSide(state),
-    //       desc: 'Enough is enough'
-    //     }
-    //   })
-    // }
     const canOpponentMove = this.canMakeAMove(state, this.opponentSide(state));
 
     return Object.assign({}, state, { result: {
@@ -990,118 +1124,6 @@ class Tafl implements Game {
         desc: ''
       }
     })
-  }
-
-  canBeCaptured(state, coords: Coords, side: TaflSide): boolean {
-    const mid = this.sideOfPiece(this.pieceAt(state, coords))
-    return ((side === TaflSide.ATTACKER && mid === TaflSide.DEFENDER && !this.isKing(state, coords)) || (side === TaflSide.DEFENDER && mid === TaflSide.ATTACKER))
-  }
-
-  checkCaptures(state): Array<Coords> {
-    let res : Array<Coords> = []
-    const [lpr, lpc] = [state.lastAction.to.r, state.lastAction.to.c]
-    const side = this.turnSide(state)
-
-    if (lpr >= 2 && this.canHelpCapture(state, { r: lpr - 2, c: lpc }, side) && this.canBeCaptured(state, { r: lpr - 1, c: lpc }, side)) {
-      res.push({ r: lpr - 1, c: lpc })
-    }
-    if (lpr <= state.board.length - 3 && this.canHelpCapture(state, { r: lpr + 2, c: lpc }, side) && this.canBeCaptured(state, { r: lpr + 1, c: lpc }, side)) {
-      res.push({ r: lpr + 1, c: lpc })
-    }
-    if (lpc >= 2 && this.canHelpCapture(state, { r: lpr, c: lpc - 2 }, side) && this.canBeCaptured(state, { r: lpr, c: lpc - 1 }, side)) {
-      res.push({ r: lpr, c: lpc - 1 })
-    }
-    if (lpc <= state.board.length - 3 && this.canHelpCapture(state, { r: lpr, c: lpc + 2 }, side) && this.canBeCaptured(state, { r: lpr, c: lpc + 1 }, side)) {
-      res.push({ r: lpr, c: lpc + 1 })
-    }
-
-    if (state.rules[TaflRule.SHIELD_WALLS]) {
-      res.push(...this.checkShieldWalls(state));
-    }
-
-    return res
-  }
-
-  checkShieldWalls(state): Array<Coords> {
-    const res: Array<Coords> = []
-    const side = this.turnSide(state)
-    const [lpr, lpc] = [state.lastAction.to.r, state.lastAction.to.c]
-    const opp = this.opponentSide(state)
-
-    // check top or bottom
-    if (lpr === 0 || lpr === state.board.length - 1) {
-      const [lCaptured, rCaptured] = [[], []]
-      let theCol = lpc - 1;
-      const rowBehind = (lpr === state.board.length - 1) ? state.board.length - 2 : 1;
-
-      while (this.insideBounds(state, { r: lpr, c: theCol })
-      && this.sideOfPiece(this.pieceAt(state, { r: lpr, c: theCol })) === opp
-      && this.insideBounds(state, { r: rowBehind, c: theCol })
-      && this.canHelpCapture(state, { r: rowBehind, c: theCol }, side)) {
-        if (this.sideOfPiece(this.pieceAt(state, { r: lpr, c: theCol })) === opp && !this.isKing(state, { r: lpr, c: theCol })) {
-          lCaptured.push({ r: lpr, c: theCol })
-        }
-        theCol -= 1;
-      }
-
-      if (this.insideBounds(state, { r: lpr, c: theCol }) && this.canHelpCapture(state, { r: lpr, c: theCol }, side)) {
-        res.push(...lCaptured)
-      }
-
-      theCol = lpc + 1;
-
-      while (this.insideBounds(state, { r: lpr, c: theCol })
-      && this.sideOfPiece(this.pieceAt(state, {r: lpr, c: theCol })) === opp
-      && this.insideBounds(state, { r: rowBehind, c: theCol })
-      && this.canHelpCapture(state, { r: rowBehind, c: theCol }, side)) {
-        if (this.sideOfPiece(this.pieceAt(state, {r : lpr, c: theCol})) === opp && !this.isKing(state, { r: lpr, c: theCol })) {
-          rCaptured.push({ r: lpr, c: theCol })
-        }
-        theCol += 1;
-      }
-
-      if (this.insideBounds(state, { r: lpr, c: theCol }) && this.canHelpCapture(state, { r: lpr, c: theCol }, side)) {
-        res.push(...rCaptured);
-      }
-    }
-
-    // check left or right
-    if (lpc === 0 || lpc === state.board.length - 1) {
-      const [bCaptured, tCaptured] = [[], []];
-      let theRow = lpr - 1;
-      const colBehind = (lpc === state.board.length - 1) ? state.board.length - 2 : 1;
-
-      while (this.insideBounds(state, { r: theRow, c: lpc })
-      && this.sideOfPiece(this.pieceAt(state, {r: theRow, c: lpc})) === opp
-      && this.insideBounds(state, { r: theRow, c: colBehind })
-      && this.canHelpCapture(state, { r: theRow, c: colBehind }, side)) {
-        if (this.sideOfPiece(this.pieceAt(state, {r: theRow, c: lpc})) === opp && !this.isKing(state, { r: theRow, c: lpc })) {
-          bCaptured.push({ r: theRow, c: lpc });
-        }
-        theRow -= 1;
-      }
-
-      if (this.insideBounds(state, { r: theRow, c: lpc }) && this.canHelpCapture(state, { r: theRow, c: lpc }, side)) {
-        res.push(...bCaptured);
-      }
-
-      theRow = lpr + 1;
-      while (this.insideBounds(state, {r: theRow, c: lpc})
-      && this.sideOfPiece(this.pieceAt(state, {r: theRow, c: lpc})) === opp
-      && this.insideBounds(state, { r: theRow, c: colBehind })
-      && this.canHelpCapture(state, { r: theRow, c: colBehind }, side)) {
-        if (this.sideOfPiece(this.pieceAt(state, {r: theRow, c: lpc})) === opp && !this.isKing(state, { r: theRow, c: lpc })) {
-          tCaptured.push({ r: theRow, c: lpc });
-        }
-        theRow += 1;
-      }
-
-      if (this.insideBounds(state, { r: theRow, c: lpc }) && this.canHelpCapture(state, { r: theRow, c: lpc }, side)) {
-        res.push(...tCaptured);
-      }
-    }
-
-    return res
   }
 
   public act(state, moveAction: MoveAction): typeof state {
@@ -1113,13 +1135,17 @@ class Tafl implements Game {
       return arr.slice();
     });
 
+    const actionsCopy = state.actions.slice();
+
     const fr = moveAction.from.r
     const fc = moveAction.from.c
     boardCopy[moveAction.to.r][moveAction.to.c] = this.pieceAt(state, moveAction.from)
     boardCopy[fr][fc] = Piece.__
+    actionsCopy.push(moveAction)
 
     const playerMovedState = Object.assign({},
       state,
+      { actions: actionsCopy },
       { lastAction: moveAction },
       { board: boardCopy }
     )
@@ -1136,7 +1162,19 @@ class Tafl implements Game {
       { board: boardCopy },
     )
 
-    const gameOverState = this.isGameOver(capturedPiecesState)
+    const boardHash = this.getBoardHash(state)
+    const boardHistoryCopy = Object.assign({}, state.boardHistory)
+    if (!(boardHash in boardHistoryCopy)) {
+      boardHistoryCopy[boardHash] = 0
+    }
+    boardHistoryCopy[boardHash] += 1
+
+    const boardHashSavedState = Object.assign({},
+      capturedPiecesState,
+      { boardHistory: boardHistoryCopy }
+    )
+
+    const gameOverState = this.isGameOver(boardHashSavedState)
     return Object.assign({}, gameOverState, { turn: state.turn + 1 })
   }
 }

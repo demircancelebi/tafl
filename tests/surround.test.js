@@ -21,7 +21,9 @@ const simpleTestBoard = {
         [_, _, _, _, _, _, _, _, _, _, _],
     ]
 };
-const simpleTest = tafl.didAttackersSurroundDefenders(simpleTestBoard) === true;
+test("Surrounding should work if there is no a defender outside", () => {
+    expect(tafl.didAttackersSurroundDefenders(simpleTestBoard)).toBe(true);
+});
 const simpleTestDefenderOutsideBoard = {
     board: [
         [_, _, _, _, _, _, _, _, _, _, _],
@@ -37,7 +39,9 @@ const simpleTestDefenderOutsideBoard = {
         [_, _, _, _, _, _, _, _, _, _, _],
     ]
 };
-const simpleTestDefenderOutside = tafl.didAttackersSurroundDefenders(simpleTestDefenderOutsideBoard) === false;
+test("Surrounding should not work if there is a defender outside", () => {
+    expect(tafl.didAttackersSurroundDefenders(simpleTestDefenderOutsideBoard)).toBe(false);
+});
 const surroundTestBoard = {
     board: [
         [_, _, _, _, _, _, _, _, A, A, _],
@@ -53,7 +57,9 @@ const surroundTestBoard = {
         [_, _, _, _, _, _, _, _, _, _, _],
     ]
 };
-const surroundTest = tafl.didAttackersSurroundDefenders(surroundTestBoard) === true;
+test("Surrounding attackers should be equal to true", () => {
+    expect(tafl.didAttackersSurroundDefenders(surroundTestBoard)).toBe(true);
+});
 const spiralTestBoard = {
     board: [
         [_, _, _, _, _, _, _, _, A, _, _],
@@ -69,7 +75,9 @@ const spiralTestBoard = {
         [_, _, _, _, _, _, _, _, _, _, _],
     ]
 };
-const spiralTest = tafl.didAttackersSurroundDefenders(spiralTestBoard) === false;
+test("Spiral of attackers does not surround defenders", () => {
+    expect(tafl.didAttackersSurroundDefenders(spiralTestBoard)).toBe(false);
+});
 const closedSpiralTestBoard = {
     board: [
         [_, _, _, _, _, _, _, A, A, _, _],
@@ -85,7 +93,9 @@ const closedSpiralTestBoard = {
         [_, _, _, _, _, _, _, _, _, _, _],
     ]
 };
-const closedSpiralTest = tafl.didAttackersSurroundDefenders(closedSpiralTestBoard) === true;
+test("Closed spiral of attackers surround defenders", () => {
+    expect(tafl.didAttackersSurroundDefenders(closedSpiralTestBoard)).toBe(true);
+});
 const connectedTestBoard = {
     board: [
         [_, _, _, _, _, _, _, _, _, _, _],
@@ -101,7 +111,9 @@ const connectedTestBoard = {
         [_, _, _, _, _, _, _, _, _, _, _],
     ]
 };
-const connectedTest = tafl.didAttackersSurroundDefenders(connectedTestBoard) === false;
+test("Two layers of attackers does not surround if there is a hole", () => {
+    expect(tafl.didAttackersSurroundDefenders(connectedTestBoard)).toBe(false);
+});
 const twoLayersTestBoard = {
     board: [
         [_, _, _, _, _, _, _, _, _, _, _],
@@ -117,8 +129,10 @@ const twoLayersTestBoard = {
         [_, _, A, A, A, A, A, A, A, A, _],
     ]
 };
-const twoLayersTest = tafl.didAttackersSurroundDefenders(twoLayersTestBoard) === true;
-const twoLayersWithHoleTestBoard = {
+test("Second layer of attackers surround if defenders are between layers", () => {
+    expect(tafl.didAttackersSurroundDefenders(twoLayersTestBoard)).toBe(true);
+});
+const twoLayersTestBoardWithOutsideDefenderBoard = {
     board: [
         [_, _, _, _, _, _, _, _, _, _, _],
         [_, _, A, A, A, A, A, A, A, A, A],
@@ -133,7 +147,9 @@ const twoLayersWithHoleTestBoard = {
         [_, _, A, A, A, A, A, A, A, A, _],
     ]
 };
-const twoLayersWithHoleTest = tafl.didAttackersSurroundDefenders(twoLayersWithHoleTestBoard) === false;
+test("Two layers of attackers does not surround if there is a defender outside", () => {
+    expect(tafl.didAttackersSurroundDefenders(twoLayersTestBoardWithOutsideDefenderBoard)).toBe(false);
+});
 const startPositionTestBoard = {
     board: [
         [_, _, _, A, A, A, A, A, _, _, _],
@@ -149,24 +165,7 @@ const startPositionTestBoard = {
         [_, _, _, A, A, A, A, A, _, _, _],
     ]
 };
-const startPositionTest = tafl.didAttackersSurroundDefenders(startPositionTestBoard) === false;
-const tests = {
-    simpleTest,
-    simpleTestDefenderOutside,
-    surroundTest,
-    spiralTest,
-    closedSpiralTest,
-    connectedTest,
-    twoLayersTest,
-    twoLayersWithHoleTest,
-    startPositionTest
-};
-const failures = Object.keys(tests).filter(k => (!tests[k]));
-if (failures.length === 0) {
-    console.log(`All ${Object.keys(tests).length} surround tests are passing`);
-}
-else {
-    console.log("Failing tests:");
-    console.log(failures.join(", "));
-}
-//# sourceMappingURL=surround.js.map
+test("Start position does not surround defenders", () => {
+    expect(tafl.didAttackersSurroundDefenders(startPositionTestBoard)).toBe(false);
+});
+//# sourceMappingURL=surround.test.js.map

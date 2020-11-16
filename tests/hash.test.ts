@@ -21,8 +21,9 @@ const simpleTestBoard = {
     [_, _, _, _, _, _, _, _, _, _, _],
   ]
 }
-const simpleTest = tafl.didAttackersSurroundDefenders(simpleTestBoard) === true
-
+test("hash check", () => {
+  expect(tafl.getBoardHash(simpleTestBoard)).toBe("ppb0VctBdeE7mF6QKsfvj5wDJM8=")
+})
 
 const simpleTestDefenderOutsideBoard = {
   board: [
@@ -39,8 +40,9 @@ const simpleTestDefenderOutsideBoard = {
     [_, _, _, _, _, _, _, _, _, _, _],
   ]
 }
-const simpleTestDefenderOutside = tafl.didAttackersSurroundDefenders(simpleTestDefenderOutsideBoard) === false
-
+test("hash check", () => {
+  expect(tafl.getBoardHash(simpleTestDefenderOutsideBoard)).toBe("/HVvwa9PwtFACGWQIxkIUau9ld8=")
+})
 
 const surroundTestBoard = {
   board: [
@@ -57,8 +59,9 @@ const surroundTestBoard = {
     [_, _, _, _, _, _, _, _, _, _, _],
   ]
 }
-const surroundTest = tafl.didAttackersSurroundDefenders(surroundTestBoard) === true
-
+test("hash check", () => {
+  expect(tafl.getBoardHash(surroundTestBoard)).toBe("Hm7ygxCBTKyF7v2Fv/rYvO1SNzA=")
+})
 
 const spiralTestBoard = {
   board: [
@@ -75,8 +78,9 @@ const spiralTestBoard = {
     [_, _, _, _, _, _, _, _, _, _, _],
   ]
 }
-const spiralTest = tafl.didAttackersSurroundDefenders(spiralTestBoard) === false
-
+test("hash check", () => {
+  expect(tafl.getBoardHash(spiralTestBoard)).toBe("nyAFXVAuvxneZMlVxOJn3qIpCN8=")
+})
 
 const closedSpiralTestBoard = {
   board: [
@@ -93,8 +97,9 @@ const closedSpiralTestBoard = {
     [_, _, _, _, _, _, _, _, _, _, _],
   ]
 }
-const closedSpiralTest = tafl.didAttackersSurroundDefenders(closedSpiralTestBoard) === true
-
+test("hash check", () => {
+  expect(tafl.getBoardHash(closedSpiralTestBoard)).toBe("FyTtTGi76TsVwHB3nek2Dn5hECI=")
+})
 
 const connectedTestBoard = {
   board: [
@@ -111,8 +116,9 @@ const connectedTestBoard = {
     [_, _, _, _, _, _, _, _, _, _, _],
   ]
 }
-const connectedTest = tafl.didAttackersSurroundDefenders(connectedTestBoard) === false
-
+test("hash check", () => {
+  expect(tafl.getBoardHash(connectedTestBoard)).toBe("SCBY/71cYICVQwEUBR08sIsZK8s=")
+})
 
 const twoLayersTestBoard = {
   board: [
@@ -129,8 +135,9 @@ const twoLayersTestBoard = {
     [_, _, A, A, A, A, A, A, A, A, _],
   ]
 }
-const twoLayersTest = tafl.didAttackersSurroundDefenders(twoLayersTestBoard) === true
-
+test("hash check", () => {
+  expect(tafl.getBoardHash(twoLayersTestBoard)).toBe("Cs62PHjYqhMG33kgH/xjhCfOxLY=")
+})
 
 const twoLayersWithHoleTestBoard = {
   board: [
@@ -147,8 +154,9 @@ const twoLayersWithHoleTestBoard = {
     [_, _, A, A, A, A, A, A, A, A, _],
   ]
 }
-const twoLayersWithHoleTest = tafl.didAttackersSurroundDefenders(twoLayersWithHoleTestBoard) === false
-
+test("hash check", () => {
+  expect(tafl.getBoardHash(twoLayersWithHoleTestBoard)).toBe("kkdQ5da51qCA1tD3UbucNWDw5j4=")
+})
 
 const startPositionTestBoard = {
   board: [
@@ -165,24 +173,6 @@ const startPositionTestBoard = {
     [_, _, _, A, A, A, A, A, _, _, _],
   ]
 }
-const startPositionTest = tafl.didAttackersSurroundDefenders(startPositionTestBoard) === false
-
-const tests = {
-  simpleTest,
-  simpleTestDefenderOutside,
-  surroundTest,
-  spiralTest,
-  closedSpiralTest,
-  connectedTest,
-  twoLayersTest,
-  twoLayersWithHoleTest,
-  startPositionTest
-}
-
-const failures = Object.keys(tests).filter(k => (!tests[k]))
-if (failures.length === 0) {
-  console.log(`All ${Object.keys(tests).length} surround tests are passing`)
-} else {
-  console.log("Failing tests:")
-  console.log(failures.join(", "))
-}
+test("hash check", () => {
+  expect(tafl.getBoardHash(startPositionTestBoard)).toBe("bX5h3MSdCTIZPtpwyocJM39GJR0=")
+})

@@ -18,10 +18,12 @@ const simpleCaptureState = {
         [_, _, _, _, _, _, _],
     ],
     lastAction: { from: { r: 0, c: 1 }, to: { r: 1, c: 1 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const sc = tafl.checkCaptures(simpleCaptureState);
-const simpleCaptureTest = sc.length === 1 && sc[0].r === 1 && sc[0].c === 2;
+test("capture check", () => {
+    const res = tafl.checkCaptures(simpleCaptureState);
+    expect(res.length === 1 && res[0].r === 1 && res[0].c === 2).toBe(true);
+});
 const simpleKingCaptureState = {
     turn: 1,
     board: [
@@ -34,10 +36,12 @@ const simpleKingCaptureState = {
         [_, _, _, _, _, _, _],
     ],
     lastAction: { from: { r: 0, c: 1 }, to: { r: 1, c: 1 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const skc = tafl.checkCaptures(simpleKingCaptureState);
-const simpleKingCaptureTest = skc.length === 1 && skc[0].r === 1 && skc[0].c === 2;
+test("capture check", () => {
+    const res = tafl.checkCaptures(simpleKingCaptureState);
+    expect(res.length === 1 && res[0].r === 1 && res[0].c === 2).toBe(true);
+});
 const cannotCaptureKingState = {
     turn: 0,
     board: [
@@ -50,10 +54,12 @@ const cannotCaptureKingState = {
         [_, _, _, _, _, _, _],
     ],
     lastAction: { from: { r: 0, c: 1 }, to: { r: 1, c: 1 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const cck = tafl.checkCaptures(cannotCaptureKingState);
-const cannotCaptureKingTest = cck.length === 0;
+test("capture check", () => {
+    const res = tafl.checkCaptures(cannotCaptureKingState);
+    expect(res.length).toBe(0);
+});
 const cannotCaptureKingShieldWallState = {
     turn: 0,
     board: [
@@ -66,10 +72,12 @@ const cannotCaptureKingShieldWallState = {
         [_, _, _, _, _, _, _],
     ],
     lastAction: { from: { r: 1, c: 1 }, to: { r: 0, c: 1 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const ccksw = tafl.checkCaptures(cannotCaptureKingShieldWallState);
-const cannotCaptureKingShieldWallTest = ccksw.length === 2;
+test("capture check", () => {
+    const res = tafl.checkCaptures(cannotCaptureKingShieldWallState);
+    expect(res.length).toBe(2);
+});
 const simpleInBetweenState = {
     turn: 0,
     board: [
@@ -82,10 +90,12 @@ const simpleInBetweenState = {
         [_, _, _, _, _, _, _],
     ],
     lastAction: { from: { r: 0, c: 2 }, to: { r: 1, c: 2 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const sib = tafl.checkCaptures(simpleInBetweenState);
-const simpleInBetweenTest = sib.length === 0;
+test("capture check", () => {
+    const res = tafl.checkCaptures(simpleInBetweenState);
+    expect(res.length).toBe(0);
+});
 const take2State = {
     turn: 1,
     board: [
@@ -98,10 +108,12 @@ const take2State = {
         [_, _, _, _, _, _, _],
     ],
     lastAction: { from: { r: 0, c: 3 }, to: { r: 1, c: 3 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const t2 = tafl.checkCaptures(take2State);
-const takeTwoTest = t2.length === 2;
+test("capture check", () => {
+    const res = tafl.checkCaptures(take2State);
+    expect(res.length).toBe(2);
+});
 const take3State = {
     turn: 1,
     board: [
@@ -114,10 +126,12 @@ const take3State = {
         [_, _, _, _, _, _, _],
     ],
     lastAction: { from: { r: 0, c: 2 }, to: { r: 1, c: 2 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const t3 = tafl.checkCaptures(take3State);
-const takeThreeTest = t3.length === 3;
+test("capture check", () => {
+    const res = tafl.checkCaptures(take3State);
+    expect(res.length).toBe(3);
+});
 const topLeftCornerState = {
     turn: 1,
     board: [
@@ -130,10 +144,12 @@ const topLeftCornerState = {
         [_, _, _, _, _, _, _],
     ],
     lastAction: { from: { r: 1, c: 2 }, to: { r: 0, c: 2 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const tlc = tafl.checkCaptures(topLeftCornerState);
-const topLeftCornerTest = tlc.length === 1 && tlc[0].r === 0 && tlc[0].c === 1;
+test("capture check", () => {
+    const res = tafl.checkCaptures(topLeftCornerState);
+    expect(res.length === 1 && res[0].r === 0 && res[0].c === 1).toBe(true);
+});
 const topLeftCornerAttackerState = {
     turn: 0,
     board: [
@@ -146,10 +162,12 @@ const topLeftCornerAttackerState = {
         [_, _, _, _, _, _, _],
     ],
     lastAction: { from: { r: 1, c: 2 }, to: { r: 0, c: 2 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const tlac = tafl.checkCaptures(topLeftCornerAttackerState);
-const topLeftCornerAttackerTest = tlac.length === 1 && tlac[0].r === 0 && tlac[0].c === 1;
+test("capture check", () => {
+    const res = tafl.checkCaptures(topLeftCornerAttackerState);
+    expect(res.length === 1 && res[0].r === 0 && res[0].c === 1).toBe(true);
+});
 const checkCenterState = {
     turn: 1,
     board: [
@@ -162,10 +180,12 @@ const checkCenterState = {
         [_, _, _, _, _, _, _],
     ],
     lastAction: { from: { r: 0, c: 3 }, to: { r: 1, c: 3 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const cc = tafl.checkCaptures(checkCenterState);
-const checkCenterTest = cc.length === 3;
+test("capture check", () => {
+    const res = tafl.checkCaptures(checkCenterState);
+    expect(res.length).toBe(3);
+});
 const checkCenterAttackerState = {
     turn: 0,
     board: [
@@ -178,10 +198,12 @@ const checkCenterAttackerState = {
         [_, _, _, _, _, _, _],
     ],
     lastAction: { from: { r: 0, c: 3 }, to: { r: 1, c: 3 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const cca = tafl.checkCaptures(checkCenterAttackerState);
-const checkCenterAttackerTest = cca.length === 3;
+test("capture check", () => {
+    const res = tafl.checkCaptures(checkCenterAttackerState);
+    expect(res.length).toBe(3);
+});
 const shieldWallState = {
     turn: 1,
     board: [
@@ -194,10 +216,12 @@ const shieldWallState = {
         [_, D, A, A, A, D, _],
     ],
     lastAction: { from: { r: 0, c: 5 }, to: { r: 6, c: 5 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const sw = tafl.checkCaptures(shieldWallState);
-const shieldWallTest = sw.length === 3 && sw.reduce((acc, cur) => (cur.c + acc), 0) === 9;
+test("capture check", () => {
+    const res = tafl.checkCaptures(shieldWallState);
+    expect(res.length === 3 && res.reduce((acc, cur) => (cur.c + acc), 0) === 9).toBe(true);
+});
 const shieldWallNoCaptureState = {
     turn: 1,
     board: [
@@ -210,10 +234,12 @@ const shieldWallNoCaptureState = {
         [_, D, A, A, A, D, _],
     ],
     lastAction: { from: { r: 0, c: 4 }, to: { r: 5, c: 4 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const swno = tafl.checkCaptures(shieldWallNoCaptureState);
-const shieldWallNoCaptureTest = swno.length === 0;
+test("capture check", () => {
+    const res = tafl.checkCaptures(shieldWallNoCaptureState);
+    expect(res.length).toBe(0);
+});
 const shieldWallAttackerState = {
     turn: 0,
     board: [
@@ -226,10 +252,12 @@ const shieldWallAttackerState = {
         [_, A, D, D, D, A, _],
     ],
     lastAction: { from: { r: 0, c: 5 }, to: { r: 6, c: 5 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const swa = tafl.checkCaptures(shieldWallAttackerState);
-const shieldWallAttackerTest = swa.length === 3 && swa.reduce((acc, cur) => (cur.c + acc), 0) === 9;
+test("capture check", () => {
+    const res = tafl.checkCaptures(shieldWallAttackerState);
+    expect(res.length === 3 && res.reduce((acc, cur) => (cur.c + acc), 0) === 9).toBe(true);
+});
 const shieldWallBothSidesState = {
     turn: 1,
     board: [
@@ -246,10 +274,12 @@ const shieldWallBothSidesState = {
         [_, D, A, A, A, D, A, A, A, A, _],
     ],
     lastAction: { from: { r: 0, c: 5 }, to: { r: 10, c: 5 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const swbs = tafl.checkCaptures(shieldWallBothSidesState);
-const shieldWallBothSidesTest = swbs.length === 7;
+test("capture check", () => {
+    const res = tafl.checkCaptures(shieldWallBothSidesState);
+    expect(res.length).toBe(7);
+});
 const shieldWallOneSideState = {
     turn: 1,
     board: [
@@ -266,10 +296,12 @@ const shieldWallOneSideState = {
         [_, D, A, A, A, D, A, A, A, _, _],
     ],
     lastAction: { from: { r: 0, c: 5 }, to: { r: 10, c: 5 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const swos = tafl.checkCaptures(shieldWallOneSideState);
-const shieldWallOneSideTest = swos.length === 3;
+test("capture check", () => {
+    const res = tafl.checkCaptures(shieldWallOneSideState);
+    expect(res.length).toBe(3);
+});
 const shieldWallKingOneSideState = {
     turn: 1,
     board: [
@@ -286,10 +318,12 @@ const shieldWallKingOneSideState = {
         [_, D, A, A, A, K, A, A, A, _, _],
     ],
     lastAction: { from: { r: 0, c: 5 }, to: { r: 10, c: 5 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const swkos = tafl.checkCaptures(shieldWallKingOneSideState);
-const shieldWallKingOneSideTest = swkos.length === 3;
+test("capture check", () => {
+    const res = tafl.checkCaptures(shieldWallKingOneSideState);
+    expect(res.length).toBe(3);
+});
 const shieldWallKingOnWallState = {
     turn: 1,
     board: [
@@ -306,10 +340,12 @@ const shieldWallKingOnWallState = {
         [_, D, A, A, A, D, A, A, A, _, _],
     ],
     lastAction: { from: { r: 0, c: 5 }, to: { r: 10, c: 5 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const swkow = tafl.checkCaptures(shieldWallKingOnWallState);
-const shieldWallKingOnWallTest = swkos.length === 3;
+test("capture check", () => {
+    const res = tafl.checkCaptures(shieldWallKingOnWallState);
+    expect(res.length).toBe(3);
+});
 const shieldWallIncompleteWallState = {
     turn: 1,
     board: [
@@ -326,37 +362,10 @@ const shieldWallIncompleteWallState = {
         [_, D, A, A, A, D, A, A, A, _, _],
     ],
     lastAction: { from: { r: 0, c: 5 }, to: { r: 10, c: 5 } },
-    rules: index_1.TaflRuleSet.COPENHAGEN,
+    rules: index_1.TaflRuleSet.COPENHAGEN
 };
-const swiw = tafl.checkCaptures(shieldWallIncompleteWallState);
-const shieldWallIncompleteWallTest = swiw.length === 0;
-const tests = {
-    simpleCaptureTest,
-    simpleKingCaptureTest,
-    cannotCaptureKingTest,
-    cannotCaptureKingShieldWallTest,
-    simpleInBetweenTest,
-    takeTwoTest,
-    takeThreeTest,
-    topLeftCornerTest,
-    topLeftCornerAttackerTest,
-    checkCenterTest,
-    checkCenterAttackerTest,
-    shieldWallTest,
-    shieldWallNoCaptureTest,
-    shieldWallAttackerTest,
-    shieldWallBothSidesTest,
-    shieldWallOneSideTest,
-    shieldWallKingOneSideTest,
-    shieldWallKingOnWallTest,
-    shieldWallIncompleteWallTest
-};
-const failures = Object.keys(tests).filter(k => (!tests[k]));
-if (failures.length === 0) {
-    console.log(`All ${Object.keys(tests).length} capture tests are passing`);
-}
-else {
-    console.log("Failing tests:");
-    console.log(failures.join(", "));
-}
-//# sourceMappingURL=capture.js.map
+test("capture check", () => {
+    const res = tafl.checkCaptures(shieldWallIncompleteWallState);
+    expect(res.length).toBe(0);
+});
+//# sourceMappingURL=capture.test.js.map
