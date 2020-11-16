@@ -170,10 +170,15 @@ coords(repr: String): Coords;
 toPathRepr(...args: any[]): String;
 toPathCoords(path: String): Array<Coords>;
 insideBounds(state: any, coords: Coords): boolean;
+connectedPieces(state: any, coords: Coords, side: TaflSide): Set<String>;
 connectedDefenders(state: any, coords: Coords): Set<String>;
+connectedAttackers(state: any, coords: Coords): Set<String>;
+possiblySurroundingPieces(state: any, kingCoords: Coords, side: TaflSide): Array<Coords>;
 possiblySurrondingDefenders(state: any, kingCoords: Coords): Array<Coords>;
+possiblySurrondingAttackers(state: any, kingCoords: Coords): Array<Coords>;
 isInsideEye(state: any, coords: Coords, fullFortStructure: Set<String>): boolean;
 getPossibleSmallestFortStructure(state: any, innerSet: Set<String>, fullStructure: Set<String>): Set<String>;
+getEmptyPiecesAndOpponentsInsideSmallestClosedStructure(state: any, kingCoords: Coords, closedStructure: Set<String>, oppSide?: TaflSide): Array<Set<String>>;
 getEmptyPiecesAndAttackersInsideSmallestFort(state: any, kingCoords: Coords, fullFortStructure: Set<String>): Array<Set<String>>;
 insideFort(state: any, kingCoords: Coords): boolean;
 kingEscapedThroughFort(state: any): boolean;
@@ -195,11 +200,13 @@ pieceAt(state: any, coords: Coords): Piece;
 canMovePieceHere(state: any, piece: Piece, coords: Coords): boolean;
 getPossibleMovesFrom(state: any, coords: Coords): Array<Coords>;
 canMakeAMove(state: any, side: TaflSide): boolean;
+getKingCoords(state: any): Coords;
+didAttackersSurroundDefenders(state: any): boolean;
 fortSearchFromKing(state: any, kingCoords: Coords): boolean;
 getPossibleActions(state: any, side?: TaflSide): Array<MoveAction>;
 // Given a state, returns all possible actions that can be chosen
 isActionPossible(state: any, act: MoveAction): boolean | never;
-// Returns true if action is possible in given state, false otherwise
+// Returns true if action is possible in given state, throws an error otherwise
 isGameOver(state: any): typeof state;
 // Given a state, returns new state with game over information. If game is over, returned state object will have `{result: { finished: true }}` with additional information like `result.winner` and `result.desc`.
 canBeCaptured(state: any, coords: Coords, side: TaflSide): boolean;

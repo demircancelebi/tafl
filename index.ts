@@ -316,9 +316,9 @@ class Tafl implements Game {
     return rowInsideBounds && colInsideBounds
   }
 
-  connectedDefenders(state, coords: Coords): Set<String> {
+  connectedPieces(state, coords: Coords, side: TaflSide): Set<String> {
     const that = this
-    function getConnectedDefenders(state, coords: Coords, setOfCoords) {
+    function getConnectedPieces(state, coords: Coords, setOfCoords) {
       setOfCoords.add(that.repr(coords));
 
       for (let r = -1; r <= 1; r += 1) {
@@ -326,23 +326,34 @@ class Tafl implements Game {
           const newCoords: Coords = { r: coords.r + r, c: coords.c + c };
           const isSelf = r === 0 && c === 0;
 
-          if (that.insideBounds(state, newCoords) && !isSelf && that.isDefender(state, newCoords)) {
+          if (that.insideBounds(state, newCoords)
+          && !isSelf
+          && ((side === TaflSide.DEFENDER && that.isDefender(state, newCoords))
+           || (side === TaflSide.ATTACKER && that.isAttacker(state, newCoords)))) {
             if (!setOfCoords.has(that.repr(newCoords))) {
-              getConnectedDefenders(state, newCoords, setOfCoords);
+              getConnectedPieces(state, newCoords, setOfCoords);
             }
           }
         }
       }
     }
 
-    const connectedDefenders = new Set<String>();
-    getConnectedDefenders(state, coords, connectedDefenders);
+    const connectedPieces = new Set<String>();
+    getConnectedPieces(state, coords, connectedPieces);
 
-    return connectedDefenders
+    return connectedPieces
   }
 
-  possiblySurrondingDefenders(state, kingCoords: Coords): Array<Coords> {
-    const possiblySurroundingDefendersSet = new Set<String>()
+  connectedDefenders(state, coords: Coords): Set<String> {
+    return this.connectedPieces(state, coords, TaflSide.DEFENDER)
+  }
+
+  connectedAttackers(state, coords: Coords): Set<String> {
+    return this.connectedPieces(state, coords, TaflSide.ATTACKER)
+  }
+
+  possiblySurroundingPieces(state, kingCoords: Coords, side: TaflSide): Array<Coords> {
+    const possiblySurroundingPiecesSet = new Set<String>()
     const processed = new Set<String>()
     const q = new Array<String>()
 
@@ -355,8 +366,9 @@ class Tafl implements Game {
       for (const neighbor of neighbors_4) {
         const neighborCoords: Coords = { r: curCoords.r + neighbor[0], c: curCoords.c + neighbor[1] }
         if (this.insideBounds(state, neighborCoords) && !processed.has(this.repr(neighborCoords))) {
-          if (this.isDefender(state, neighborCoords)) {
-            possiblySurroundingDefendersSet.add(this.repr(neighborCoords))
+          if ((side === TaflSide.DEFENDER && this.isDefender(state, neighborCoords))
+           || (side === TaflSide.ATTACKER && this.isAttacker(state, neighborCoords))) {
+            possiblySurroundingPiecesSet.add(this.repr(neighborCoords))
           } else {
             q.push(this.repr(neighborCoords))
           }
@@ -365,7 +377,15 @@ class Tafl implements Game {
       processed.add(this.repr(curCoords))
     }
 
-    return [...possiblySurroundingDefendersSet].map(this.coords)
+    return [...possiblySurroundingPiecesSet].map(this.coords)
+  }
+
+  possiblySurrondingDefenders(state, kingCoords: Coords): Array<Coords> {
+    return this.possiblySurroundingPieces(state, kingCoords, TaflSide.DEFENDER)
+  }
+
+  possiblySurrondingAttackers(state, kingCoords: Coords): Array<Coords> {
+    return this.possiblySurroundingPieces(state, kingCoords, TaflSide.ATTACKER)
   }
 
   isInsideEye(state, coords: Coords, fullFortStructure: Set<String>): boolean {
@@ -399,8 +419,8 @@ class Tafl implements Game {
     return intersection
   }
 
-  getEmptyPiecesAndAttackersInsideSmallestFort(state, kingCoords: Coords, fullFortStructure: Set<String>): Array<Set<String>> {
-    const attackerSet = new Set<String>()
+  getEmptyPiecesAndOpponentsInsideSmallestClosedStructure(state, kingCoords: Coords, closedStructure: Set<String>, oppSide: TaflSide = TaflSide.ATTACKER): Array<Set<String>> {
+    const opponentSet = new Set<String>()
     const innerSet = new Set<String>()
     const processed = new Set<String>()
     const q = new Array<String>()
@@ -413,11 +433,12 @@ class Tafl implements Game {
     while (q.length > 0) {
       const curCoords = this.coords(q.pop())
       if (this.insideBounds(state, curCoords) && !processed.has(this.repr(curCoords))) {
-        if (!fullFortStructure.has(this.repr(curCoords))) {
+        if (!closedStructure.has(this.repr(curCoords))) {
           if (this.isEmpty(state, curCoords) || this.isDfOrKing(state, curCoords)) {
             innerSet.add(this.repr(curCoords))
-          } else if (this.isAttacker(state, curCoords)) {
-            attackerSet.add(this.repr(curCoords))
+          } else if ((oppSide === TaflSide.ATTACKER && this.isAttacker(state, curCoords)) ||
+                     (oppSide === TaflSide.DEFENDER && this.isDefender(state, curCoords))) {
+            opponentSet.add(this.repr(curCoords))
           }
 
           for (const neighbor of neighbors_4) {
@@ -430,7 +451,11 @@ class Tafl implements Game {
       processed.add(this.repr(curCoords))
     }
 
-    return [innerSet, attackerSet]
+    return [innerSet, opponentSet]
+  }
+
+  getEmptyPiecesAndAttackersInsideSmallestFort(state, kingCoords: Coords, fullFortStructure: Set<String>): Array<Set<String>> {
+    return this.getEmptyPiecesAndOpponentsInsideSmallestClosedStructure(state, kingCoords, fullFortStructure)
   }
 
   insideFort(state, kingCoords: Coords): boolean {
@@ -471,9 +496,7 @@ class Tafl implements Game {
     const onEdge = this.isEdge(state, lastTo);
     if (!onEdge) { return false }
 
-    const insideFort = this.insideFort(state, lastTo);
-
-    return insideFort;
+    return this.insideFort(state, lastTo);
   }
 
   isBase(state, coords: Coords): boolean {
@@ -593,6 +616,85 @@ class Tafl implements Game {
 
   canMakeAMove(state, side: TaflSide): boolean {
     return this.getPossibleActions(state, side).length > 0;
+  }
+
+  getKingCoords(state): Coords {
+    let kingCoords = null;
+    for (const _r in state.board) {
+      const r = parseInt(_r, 10);
+      for (const _c in state.board[r]) {
+        const c = parseInt(_c, 10)
+        const coords = { r, c }
+        if (this.isKing(state, coords)) {
+          kingCoords = coords
+        }
+      }
+    }
+    return kingCoords
+  }
+
+  didAttackersSurroundDefenders(state): boolean {
+    const kingCoords = this.getKingCoords(state)
+    let [top, right, bottom, left] = [0, 0, 0, 0]
+
+    for (let r = 0; r < kingCoords.r; r += 1) {
+      if (this.isAttacker(state, { r, c: kingCoords.c })) {
+        top += 1
+      }
+    }
+
+    for (let r = kingCoords.r + 1; r < state.board.length; r += 1) {
+      if (this.isAttacker(state, { r, c: kingCoords.c })) {
+        bottom += 1
+      }
+    }
+
+    for (let c = 0; c < kingCoords.c; c += 1) {
+      if (this.isAttacker(state, { r: kingCoords.r, c })) {
+        left += 1
+      }
+    }
+
+    for (let c = kingCoords.c + 1; c < state.board.length; c += 1) {
+      if (this.isAttacker(state, { r: kingCoords.r, c })) {
+        right += 1
+      }
+    }
+
+    if (top === 0 || right === 0 || bottom === 0 || left === 0) {
+      return false
+    }
+
+    const psa = this.possiblySurrondingAttackers(state, kingCoords)
+    const psaSet = new Set(psa.map(this.repr))
+    const [innerSet, _] = this.getEmptyPiecesAndOpponentsInsideSmallestClosedStructure(state, kingCoords, psaSet)
+
+    const coordsArr = [...innerSet].map(this.coords)
+    const n = state.board.length
+    const m = state.board[n - 1].length
+    const ind = coordsArr.findIndex(coords => coords.r === 0 || coords.c === 0 || coords.r === n - 1 || coords.c === m - 1)
+
+    if (ind !== -1) {
+      return false
+    }
+
+    const defCount = coordsArr.reduce((acc, cur) => acc + (this.isDefender(state, cur) ? 1 : 0), 0)
+    const totCount = state.board.reduce((acc, cur) => acc + cur.reduce((pAcc, pCur) => pAcc + ((pCur === Piece.PD) ? 1 : 0), 0), 0)
+
+    if (defCount !== totCount) {
+      const boardCopy = state.board.map(function (arr) {
+        return arr.slice();
+      });
+      [...psaSet].map(this.coords).forEach(coords => {
+        boardCopy[coords.r][coords.c] = Piece.__
+      })
+      const newState = {
+        board: boardCopy
+      }
+      return this.didAttackersSurroundDefenders(newState)
+    }
+
+    return true
   }
 
   public fortSearchFromKing(state, kingCoords: Coords): boolean {
@@ -774,7 +876,7 @@ class Tafl implements Game {
     }
 
     const side = this.turnSide(state)
-    if (side === TaflSide.ATTACKER) { // King should be captured
+    if (side === TaflSide.ATTACKER) { // King should be captured or all defenders should be surrounded
       const n = state.board.length;
       let [kingOnTop, kingOnRight, kingOnBottom, kingOnLeft] = [false, false, false, false];
       kingOnTop = to?.r > 1 && this.isKing(state, { r: to.r - 1, c: to.c });
@@ -823,6 +925,17 @@ class Tafl implements Game {
             })
           }
         }
+      }
+
+      const surrounded = this.didAttackersSurroundDefenders(state)
+      if (surrounded) {
+        return Object.assign({}, state, {
+          result: {
+            finished: true,
+            winner: TaflSide.ATTACKER,
+            desc: 'Attackers surrounded the defenders'
+          }
+        })
       }
     } else { // King should be on edge, corner, or in an exit fort
       const edgeEscape = state.rules[TaflRule.EDGE_ESCAPE] && this.isKing(state, to) && this.isEdge(state, to)
