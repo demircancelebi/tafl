@@ -13,16 +13,17 @@ npm install tafl
 ## Features
 This library has support for these:
 
-- [X] Defenders can build exit forts (edge forts) on the sides for the king to can run win the game
-- [X] Both sides can capture multiple pieces on the side with shieldwall captures
+- [X] Defenders can build exit forts (edge forts) on the sides for the king to run and win the game `TaflRule.EXIT_FORTS`
+- [X] Both sides can capture multiple pieces on the sides with shieldwall captures `TaflRule.SHIELD_WALLS`
 - [X] If attackers surround all defender pieces, game ends
-- [X] King can escape from edges (in addition to corners, usually used in smaller boards)
-- [X] King can be armed or not. Armed kings can help with capturing pieces.
-- [X] King can return to center or not. In some variations, returning to center base is not possible.
-- [X] Attackers can capture the king with 2, 3, or 4 pieces. In Copenhagen, king has to be surrounded from 4 sides, but this behavior can be modified.
-- [X] Setting the starting side for the game. In Copenhagen, attackers start the game.
-- [X] Changing the width of corners. Usually corners are one piece, but in Alea Evangelii variation, corners are 2x2
-- [X] Game ends on 3-fold repetition. The repeating board states do not have to be in succession. You can modify this number (3) through rules.
+- [X] If any side has no moves left, they lose
+- [X] King can escape from edges optionally (in addition to corners, usually used in smaller boards) `TaflRule.EDGE_ESCAPE`
+- [X] King can be armed or not. Armed kings can help with capturing pieces. `TaflRule.KING_IS_ARMED`
+- [X] King can return to center or not. In some variations, returning to center base is not possible. `TaflRule.KING_CAN_RETURN_TO_CENTER`
+- [X] Attackers can capture the king with 2, 3, or 4 pieces. In Copenhagen, king has to be surrounded from 4 sides, but this behavior can be modified. `TaflRule.ATTACKER_COUNT_TO_CAPTURE`
+- [X] Setting the starting side for the game. In Copenhagen, attackers start the game. `TaflRule.STARTING_SIDE`
+- [X] Changing the width of corners. Usually corners are one piece, but in Alea Evangelii variation, corners are 2x2 `TaflRule.CORNER_BASE_WIDTH`
+- [X] Game ends on 3-fold repetition. The repeating board states do not have to be in succession. You can modify this number (3) through rules. `TaflRule.REPETITION_TURN_LIMIT`
 
 ## Basic example
 Uses Copenhagen rules on 11x11 board, plays both sides with random agent
