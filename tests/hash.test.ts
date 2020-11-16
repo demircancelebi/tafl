@@ -22,7 +22,7 @@ const simpleTestBoard = {
   ]
 }
 test("hash check", () => {
-  expect(tafl.getBoardHash(simpleTestBoard)).toBe("ppb0VctBdeE7mF6QKsfvj5wDJM8=")
+  expect(tafl.getBoardHash(simpleTestBoard.board)).toBe("ppb0VctBdeE7mF6QKsfvj5wDJM8=")
 })
 
 const simpleTestDefenderOutsideBoard = {
@@ -41,7 +41,7 @@ const simpleTestDefenderOutsideBoard = {
   ]
 }
 test("hash check", () => {
-  expect(tafl.getBoardHash(simpleTestDefenderOutsideBoard)).toBe("/HVvwa9PwtFACGWQIxkIUau9ld8=")
+  expect(tafl.getBoardHash(simpleTestDefenderOutsideBoard.board)).toBe("/HVvwa9PwtFACGWQIxkIUau9ld8=")
 })
 
 const surroundTestBoard = {
@@ -60,7 +60,7 @@ const surroundTestBoard = {
   ]
 }
 test("hash check", () => {
-  expect(tafl.getBoardHash(surroundTestBoard)).toBe("Hm7ygxCBTKyF7v2Fv/rYvO1SNzA=")
+  expect(tafl.getBoardHash(surroundTestBoard.board)).toBe("Hm7ygxCBTKyF7v2Fv/rYvO1SNzA=")
 })
 
 const spiralTestBoard = {
@@ -79,7 +79,7 @@ const spiralTestBoard = {
   ]
 }
 test("hash check", () => {
-  expect(tafl.getBoardHash(spiralTestBoard)).toBe("nyAFXVAuvxneZMlVxOJn3qIpCN8=")
+  expect(tafl.getBoardHash(spiralTestBoard.board)).toBe("nyAFXVAuvxneZMlVxOJn3qIpCN8=")
 })
 
 const closedSpiralTestBoard = {
@@ -98,7 +98,7 @@ const closedSpiralTestBoard = {
   ]
 }
 test("hash check", () => {
-  expect(tafl.getBoardHash(closedSpiralTestBoard)).toBe("FyTtTGi76TsVwHB3nek2Dn5hECI=")
+  expect(tafl.getBoardHash(closedSpiralTestBoard.board)).toBe("FyTtTGi76TsVwHB3nek2Dn5hECI=")
 })
 
 const connectedTestBoard = {
@@ -117,7 +117,7 @@ const connectedTestBoard = {
   ]
 }
 test("hash check", () => {
-  expect(tafl.getBoardHash(connectedTestBoard)).toBe("SCBY/71cYICVQwEUBR08sIsZK8s=")
+  expect(tafl.getBoardHash(connectedTestBoard.board)).toBe("SCBY/71cYICVQwEUBR08sIsZK8s=")
 })
 
 const twoLayersTestBoard = {
@@ -136,7 +136,7 @@ const twoLayersTestBoard = {
   ]
 }
 test("hash check", () => {
-  expect(tafl.getBoardHash(twoLayersTestBoard)).toBe("Cs62PHjYqhMG33kgH/xjhCfOxLY=")
+  expect(tafl.getBoardHash(twoLayersTestBoard.board)).toBe("Cs62PHjYqhMG33kgH/xjhCfOxLY=")
 })
 
 const twoLayersWithHoleTestBoard = {
@@ -155,7 +155,7 @@ const twoLayersWithHoleTestBoard = {
   ]
 }
 test("hash check", () => {
-  expect(tafl.getBoardHash(twoLayersWithHoleTestBoard)).toBe("kkdQ5da51qCA1tD3UbucNWDw5j4=")
+  expect(tafl.getBoardHash(twoLayersWithHoleTestBoard.board)).toBe("kkdQ5da51qCA1tD3UbucNWDw5j4=")
 })
 
 const startPositionTestBoard = {
@@ -174,5 +174,5 @@ const startPositionTestBoard = {
   ]
 }
 test("hash check", () => {
-  expect(tafl.getBoardHash(startPositionTestBoard)).toBe("bX5h3MSdCTIZPtpwyocJM39GJR0=")
+  expect(tafl.getBoardHash(startPositionTestBoard.board)).toBe("bX5h3MSdCTIZPtpwyocJM39GJR0=")
 })

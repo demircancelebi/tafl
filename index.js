@@ -187,6 +187,16 @@ TaflRuleSet.COPENHAGEN = {
     [TaflRule.CORNER_BASE_WIDTH]: 1,
     [TaflRule.STARTING_SIDE]: TaflSide.ATTACKER
 };
+function rotateLeft(array) {
+    var result = [];
+    array.forEach(function (a, i, aa) {
+        a.forEach(function (b, j, bb) {
+            result[j] = result[j] || [];
+            result[j][aa.length - i - 1] = b;
+        });
+    });
+    return result;
+}
 class Tafl {
     constructor() {
         this.name = "Tafl";
@@ -202,7 +212,7 @@ class Tafl {
     }
     initialState(init) {
         const board = (init === null || init === void 0 ? void 0 : init.board) || TaflBoard._11_CLASSIC;
-        const hash = this.getBoardHash({ board });
+        const hash = this.getBoardHash(board);
         const initialState = {
             turn: 0,
             actions: [],
@@ -216,7 +226,6 @@ class Tafl {
             rules: (init === null || init === void 0 ? void 0 : init.rules) || TaflRuleSet.COPENHAGEN,
             board
         };
-        // this.log(initialState)
         return initialState;
     }
     log(thing) {
@@ -579,6 +588,161 @@ class Tafl {
         }
         return true;
     }
+    canBeCaptured(state, coords, side) {
+        const mid = this.sideOfPiece(this.pieceAt(state, coords));
+        return ((side === TaflSide.ATTACKER && mid === TaflSide.DEFENDER && !this.isKing(state, coords)) || (side === TaflSide.DEFENDER && mid === TaflSide.ATTACKER));
+    }
+    checkCaptures(state) {
+        let res = [];
+        const [lpr, lpc] = [state.lastAction.to.r, state.lastAction.to.c];
+        const side = this.turnSide(state);
+        if (lpr >= 2 && this.canHelpCapture(state, { r: lpr - 2, c: lpc }, side) && this.canBeCaptured(state, { r: lpr - 1, c: lpc }, side)) {
+            res.push({ r: lpr - 1, c: lpc });
+        }
+        if (lpr <= state.board.length - 3 && this.canHelpCapture(state, { r: lpr + 2, c: lpc }, side) && this.canBeCaptured(state, { r: lpr + 1, c: lpc }, side)) {
+            res.push({ r: lpr + 1, c: lpc });
+        }
+        if (lpc >= 2 && this.canHelpCapture(state, { r: lpr, c: lpc - 2 }, side) && this.canBeCaptured(state, { r: lpr, c: lpc - 1 }, side)) {
+            res.push({ r: lpr, c: lpc - 1 });
+        }
+        if (lpc <= state.board.length - 3 && this.canHelpCapture(state, { r: lpr, c: lpc + 2 }, side) && this.canBeCaptured(state, { r: lpr, c: lpc + 1 }, side)) {
+            res.push({ r: lpr, c: lpc + 1 });
+        }
+        if (state.rules[TaflRule.SHIELD_WALLS]) {
+            res.push(...this.checkShieldWalls(state));
+        }
+        return res;
+    }
+    checkShieldWalls(state) {
+        const res = [];
+        const side = this.turnSide(state);
+        const [lpr, lpc] = [state.lastAction.to.r, state.lastAction.to.c];
+        const opp = this.opponentSide(state);
+        // check top or bottom
+        if (lpr === 0 || lpr === state.board.length - 1) {
+            const [lCaptured, rCaptured] = [[], []];
+            let theCol = lpc - 1;
+            const rowBehind = (lpr === state.board.length - 1) ? state.board.length - 2 : 1;
+            while (this.insideBounds(state, { r: lpr, c: theCol })
+                && this.sideOfPiece(this.pieceAt(state, { r: lpr, c: theCol })) === opp
+                && this.insideBounds(state, { r: rowBehind, c: theCol })
+                && this.canHelpCapture(state, { r: rowBehind, c: theCol }, side)) {
+                if (this.sideOfPiece(this.pieceAt(state, { r: lpr, c: theCol })) === opp && !this.isKing(state, { r: lpr, c: theCol })) {
+                    lCaptured.push({ r: lpr, c: theCol });
+                }
+                theCol -= 1;
+            }
+            if (this.insideBounds(state, { r: lpr, c: theCol }) && this.canHelpCapture(state, { r: lpr, c: theCol }, side)) {
+                res.push(...lCaptured);
+            }
+            theCol = lpc + 1;
+            while (this.insideBounds(state, { r: lpr, c: theCol })
+                && this.sideOfPiece(this.pieceAt(state, { r: lpr, c: theCol })) === opp
+                && this.insideBounds(state, { r: rowBehind, c: theCol })
+                && this.canHelpCapture(state, { r: rowBehind, c: theCol }, side)) {
+                if (this.sideOfPiece(this.pieceAt(state, { r: lpr, c: theCol })) === opp && !this.isKing(state, { r: lpr, c: theCol })) {
+                    rCaptured.push({ r: lpr, c: theCol });
+                }
+                theCol += 1;
+            }
+            if (this.insideBounds(state, { r: lpr, c: theCol }) && this.canHelpCapture(state, { r: lpr, c: theCol }, side)) {
+                res.push(...rCaptured);
+            }
+        }
+        // check left or right
+        if (lpc === 0 || lpc === state.board.length - 1) {
+            const [bCaptured, tCaptured] = [[], []];
+            let theRow = lpr - 1;
+            const colBehind = (lpc === state.board.length - 1) ? state.board.length - 2 : 1;
+            while (this.insideBounds(state, { r: theRow, c: lpc })
+                && this.sideOfPiece(this.pieceAt(state, { r: theRow, c: lpc })) === opp
+                && this.insideBounds(state, { r: theRow, c: colBehind })
+                && this.canHelpCapture(state, { r: theRow, c: colBehind }, side)) {
+                if (this.sideOfPiece(this.pieceAt(state, { r: theRow, c: lpc })) === opp && !this.isKing(state, { r: theRow, c: lpc })) {
+                    bCaptured.push({ r: theRow, c: lpc });
+                }
+                theRow -= 1;
+            }
+            if (this.insideBounds(state, { r: theRow, c: lpc }) && this.canHelpCapture(state, { r: theRow, c: lpc }, side)) {
+                res.push(...bCaptured);
+            }
+            theRow = lpr + 1;
+            while (this.insideBounds(state, { r: theRow, c: lpc })
+                && this.sideOfPiece(this.pieceAt(state, { r: theRow, c: lpc })) === opp
+                && this.insideBounds(state, { r: theRow, c: colBehind })
+                && this.canHelpCapture(state, { r: theRow, c: colBehind }, side)) {
+                if (this.sideOfPiece(this.pieceAt(state, { r: theRow, c: lpc })) === opp && !this.isKing(state, { r: theRow, c: lpc })) {
+                    tCaptured.push({ r: theRow, c: lpc });
+                }
+                theRow += 1;
+            }
+            if (this.insideBounds(state, { r: theRow, c: lpc }) && this.canHelpCapture(state, { r: theRow, c: lpc }, side)) {
+                res.push(...tCaptured);
+            }
+        }
+        return res;
+    }
+    getBoardHash(board) {
+        const data = board.reduce((acc, cur) => acc + cur.join(''), '');
+        return crypto_1.default.createHash('sha1').update(data).digest('base64');
+    }
+    addBoardToHistory(state, board) {
+        const eqBoardsHashes = Object.keys(this.getEquivalentBoards(board));
+        const boardHistoryCopy = Object.assign({}, state.boardHistory);
+        for (const boardHash of eqBoardsHashes) {
+            if (!(boardHash in boardHistoryCopy)) {
+                boardHistoryCopy[boardHash] = 0;
+            }
+            boardHistoryCopy[boardHash] += 1;
+        }
+        return Object.assign({}, state, { boardHistory: boardHistoryCopy });
+    }
+    getEquivalentBoards(board) {
+        const b = board.map(function (arr) {
+            return arr.slice();
+        });
+        const res = {};
+        const bHash = this.getBoardHash(b);
+        if (!(bHash in res)) {
+            res[bHash] = b;
+        }
+        const rev = b.slice().reverse();
+        const revHash = this.getBoardHash(rev);
+        if (!(revHash in res)) {
+            res[revHash] = rev;
+        }
+        const b90 = rotateLeft(b);
+        const b90Hash = this.getBoardHash(b90);
+        if (!(b90Hash in res)) {
+            res[b90Hash] = b90;
+        }
+        const b180 = rotateLeft(b90);
+        const b180Hash = this.getBoardHash(b180);
+        if (!(b180Hash in res)) {
+            res[b180Hash] = b180;
+        }
+        const b270 = rotateLeft(b180);
+        const b270Hash = this.getBoardHash(b270);
+        if (!(b270Hash in res)) {
+            res[b270Hash] = b270;
+        }
+        const rev90 = rotateLeft(rev);
+        const rev90Hash = this.getBoardHash(rev90);
+        if (!(rev90Hash in res)) {
+            res[rev90Hash] = rev90;
+        }
+        const rev180 = rotateLeft(rev90);
+        const rev180Hash = this.getBoardHash(rev180);
+        if (!(rev180Hash in res)) {
+            res[rev180Hash] = rev180;
+        }
+        const rev270 = rotateLeft(rev180);
+        const rev270Hash = this.getBoardHash(rev270);
+        if (!(rev270Hash in res)) {
+            res[rev270Hash] = rev270;
+        }
+        return res;
+    }
     fortSearchFromKing(state, kingCoords) {
         const possiblySurroundingDefendersCoords = this.possiblySurrondingDefenders(state, kingCoords);
         const searchOnRow = kingCoords.r === 0 || kingCoords.r === state.board.length - 1;
@@ -733,7 +897,7 @@ class Tafl {
                 result: Object.assign(Object.assign({}, state.result), { finished: false })
             });
         }
-        if (state.boardHistory[this.getBoardHash(state)] === state.rules[TaflRule.REPETITION_TURN_LIMIT]) {
+        if (state.boardHistory[this.getBoardHash(state.board)] === state.rules[TaflRule.REPETITION_TURN_LIMIT]) {
             return Object.assign({}, state, {
                 result: {
                     winner: null,
@@ -834,15 +998,6 @@ class Tafl {
                 });
             }
         }
-        // if (state.turn > 50) {
-        //   return Object.assign({}, state, {
-        //     result: {
-        //       finished: true,
-        //       winner: this.turnSide(state),
-        //       desc: 'Enough is enough'
-        //     }
-        //   })
-        // }
         const canOpponentMove = this.canMakeAMove(state, this.opponentSide(state));
         return Object.assign({}, state, { result: {
                 finished: !canOpponentMove,
@@ -850,104 +1005,6 @@ class Tafl {
                 desc: ''
             }
         });
-    }
-    canBeCaptured(state, coords, side) {
-        const mid = this.sideOfPiece(this.pieceAt(state, coords));
-        return ((side === TaflSide.ATTACKER && mid === TaflSide.DEFENDER && !this.isKing(state, coords)) || (side === TaflSide.DEFENDER && mid === TaflSide.ATTACKER));
-    }
-    checkCaptures(state) {
-        let res = [];
-        const [lpr, lpc] = [state.lastAction.to.r, state.lastAction.to.c];
-        const side = this.turnSide(state);
-        if (lpr >= 2 && this.canHelpCapture(state, { r: lpr - 2, c: lpc }, side) && this.canBeCaptured(state, { r: lpr - 1, c: lpc }, side)) {
-            res.push({ r: lpr - 1, c: lpc });
-        }
-        if (lpr <= state.board.length - 3 && this.canHelpCapture(state, { r: lpr + 2, c: lpc }, side) && this.canBeCaptured(state, { r: lpr + 1, c: lpc }, side)) {
-            res.push({ r: lpr + 1, c: lpc });
-        }
-        if (lpc >= 2 && this.canHelpCapture(state, { r: lpr, c: lpc - 2 }, side) && this.canBeCaptured(state, { r: lpr, c: lpc - 1 }, side)) {
-            res.push({ r: lpr, c: lpc - 1 });
-        }
-        if (lpc <= state.board.length - 3 && this.canHelpCapture(state, { r: lpr, c: lpc + 2 }, side) && this.canBeCaptured(state, { r: lpr, c: lpc + 1 }, side)) {
-            res.push({ r: lpr, c: lpc + 1 });
-        }
-        if (state.rules[TaflRule.SHIELD_WALLS]) {
-            res.push(...this.checkShieldWalls(state));
-        }
-        return res;
-    }
-    checkShieldWalls(state) {
-        const res = [];
-        const side = this.turnSide(state);
-        const [lpr, lpc] = [state.lastAction.to.r, state.lastAction.to.c];
-        const opp = this.opponentSide(state);
-        // check top or bottom
-        if (lpr === 0 || lpr === state.board.length - 1) {
-            const [lCaptured, rCaptured] = [[], []];
-            let theCol = lpc - 1;
-            const rowBehind = (lpr === state.board.length - 1) ? state.board.length - 2 : 1;
-            while (this.insideBounds(state, { r: lpr, c: theCol })
-                && this.sideOfPiece(this.pieceAt(state, { r: lpr, c: theCol })) === opp
-                && this.insideBounds(state, { r: rowBehind, c: theCol })
-                && this.canHelpCapture(state, { r: rowBehind, c: theCol }, side)) {
-                if (this.sideOfPiece(this.pieceAt(state, { r: lpr, c: theCol })) === opp && !this.isKing(state, { r: lpr, c: theCol })) {
-                    lCaptured.push({ r: lpr, c: theCol });
-                }
-                theCol -= 1;
-            }
-            if (this.insideBounds(state, { r: lpr, c: theCol }) && this.canHelpCapture(state, { r: lpr, c: theCol }, side)) {
-                res.push(...lCaptured);
-            }
-            theCol = lpc + 1;
-            while (this.insideBounds(state, { r: lpr, c: theCol })
-                && this.sideOfPiece(this.pieceAt(state, { r: lpr, c: theCol })) === opp
-                && this.insideBounds(state, { r: rowBehind, c: theCol })
-                && this.canHelpCapture(state, { r: rowBehind, c: theCol }, side)) {
-                if (this.sideOfPiece(this.pieceAt(state, { r: lpr, c: theCol })) === opp && !this.isKing(state, { r: lpr, c: theCol })) {
-                    rCaptured.push({ r: lpr, c: theCol });
-                }
-                theCol += 1;
-            }
-            if (this.insideBounds(state, { r: lpr, c: theCol }) && this.canHelpCapture(state, { r: lpr, c: theCol }, side)) {
-                res.push(...rCaptured);
-            }
-        }
-        // check left or right
-        if (lpc === 0 || lpc === state.board.length - 1) {
-            const [bCaptured, tCaptured] = [[], []];
-            let theRow = lpr - 1;
-            const colBehind = (lpc === state.board.length - 1) ? state.board.length - 2 : 1;
-            while (this.insideBounds(state, { r: theRow, c: lpc })
-                && this.sideOfPiece(this.pieceAt(state, { r: theRow, c: lpc })) === opp
-                && this.insideBounds(state, { r: theRow, c: colBehind })
-                && this.canHelpCapture(state, { r: theRow, c: colBehind }, side)) {
-                if (this.sideOfPiece(this.pieceAt(state, { r: theRow, c: lpc })) === opp && !this.isKing(state, { r: theRow, c: lpc })) {
-                    bCaptured.push({ r: theRow, c: lpc });
-                }
-                theRow -= 1;
-            }
-            if (this.insideBounds(state, { r: theRow, c: lpc }) && this.canHelpCapture(state, { r: theRow, c: lpc }, side)) {
-                res.push(...bCaptured);
-            }
-            theRow = lpr + 1;
-            while (this.insideBounds(state, { r: theRow, c: lpc })
-                && this.sideOfPiece(this.pieceAt(state, { r: theRow, c: lpc })) === opp
-                && this.insideBounds(state, { r: theRow, c: colBehind })
-                && this.canHelpCapture(state, { r: theRow, c: colBehind }, side)) {
-                if (this.sideOfPiece(this.pieceAt(state, { r: theRow, c: lpc })) === opp && !this.isKing(state, { r: theRow, c: lpc })) {
-                    tCaptured.push({ r: theRow, c: lpc });
-                }
-                theRow += 1;
-            }
-            if (this.insideBounds(state, { r: theRow, c: lpc }) && this.canHelpCapture(state, { r: theRow, c: lpc }, side)) {
-                res.push(...tCaptured);
-            }
-        }
-        return res;
-    }
-    getBoardHash(state) {
-        const data = state.board.reduce((acc, cur) => acc + cur.join(''), '');
-        return crypto_1.default.createHash('sha1').update(data).digest('base64');
     }
     act(state, moveAction) {
         if (!this.isActionPossible(state, moveAction)) {
@@ -970,14 +1027,8 @@ class Tafl {
             }
         }
         const capturedPiecesState = Object.assign({}, playerMovedState, { board: boardCopy });
-        const boardHash = this.getBoardHash(state);
-        const boardHistoryCopy = Object.assign({}, state.boardHistory);
-        if (!(boardHash in boardHistoryCopy)) {
-            boardHistoryCopy[boardHash] = 0;
-        }
-        boardHistoryCopy[boardHash] += 1;
-        const boardHashSavedState = Object.assign({}, capturedPiecesState, { boardHistory: boardHistoryCopy });
-        const gameOverState = this.isGameOver(boardHashSavedState);
+        const boardAddedToHistoryState = this.addBoardToHistory(capturedPiecesState, boardCopy);
+        const gameOverState = this.isGameOver(boardAddedToHistoryState);
         return Object.assign({}, gameOverState, { turn: state.turn + 1 });
     }
 }

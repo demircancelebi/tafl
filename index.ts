@@ -239,6 +239,17 @@ class TaflRuleSet extends RuleSet {
   }
 }
 
+function rotateLeft(array) {
+  var result = [];
+  array.forEach(function (a, i, aa) {
+    a.forEach(function (b, j, bb) {
+      result[j] = result[j] || [];
+      result[j][aa.length - i - 1] = b;
+    });
+  });
+  return result;
+}
+
 class Tafl implements Game {
   name = "Tafl"
 
@@ -255,7 +266,7 @@ class Tafl implements Game {
 
   initialState(init?): GameState {
     const board = init?.board || TaflBoard._11_CLASSIC
-    const hash = this.getBoardHash({ board })
+    const hash = this.getBoardHash(board)
     const initialState: GameState = {
       turn: 0,
       actions: [],
@@ -820,9 +831,65 @@ class Tafl implements Game {
     return res
   }
 
-  getBoardHash(state) {
-    const data = state.board.reduce((acc, cur) => acc + cur.join(''), '')
+  getBoardHash(board) {
+    const data = board.reduce((acc, cur) => acc + cur.join(''), '')
     return crypto.createHash('sha1').update(data).digest('base64')
+  }
+
+  addBoardToHistory(state, board): typeof state {
+    const eqBoardsHashes = Object.keys(this.getEquivalentBoards(board))
+    const boardHistoryCopy = Object.assign({}, state.boardHistory)
+    for (const boardHash of eqBoardsHashes) {
+      if (!(boardHash in boardHistoryCopy)) {
+        boardHistoryCopy[boardHash] = 0
+      }
+      boardHistoryCopy[boardHash] += 1
+    }
+
+    return Object.assign({},
+      state,
+      { boardHistory: boardHistoryCopy }
+    )
+  }
+
+  getEquivalentBoards(board) {
+    const b = board.map(function (arr) {
+      return arr.slice();
+    });
+
+    const res = {}
+    const bHash = this.getBoardHash(b);
+    if (!(bHash in res)) { res[bHash] = b }
+
+    const rev = b.slice().reverse()
+    const revHash = this.getBoardHash(rev);
+    if (!(revHash in res)) { res[revHash] = rev }
+
+    const b90 = rotateLeft(b)
+    const b90Hash = this.getBoardHash(b90);
+    if (!(b90Hash in res)) { res[b90Hash] = b90 }
+
+    const b180 = rotateLeft(b90)
+    const b180Hash = this.getBoardHash(b180);
+    if (!(b180Hash in res)) { res[b180Hash] = b180 }
+
+    const b270 = rotateLeft(b180)
+    const b270Hash = this.getBoardHash(b270);
+    if (!(b270Hash in res)) { res[b270Hash] = b270 }
+
+    const rev90 = rotateLeft(rev)
+    const rev90Hash = this.getBoardHash(rev90);
+    if (!(rev90Hash in res)) { res[rev90Hash] = rev90 }
+
+    const rev180 = rotateLeft(rev90)
+    const rev180Hash = this.getBoardHash(rev180);
+    if (!(rev180Hash in res)) { res[rev180Hash] = rev180 }
+
+    const rev270 = rotateLeft(rev180)
+    const rev270Hash = this.getBoardHash(rev270);
+    if (!(rev270Hash in res)) { res[rev270Hash] = rev270 }
+
+    return res
   }
 
   public fortSearchFromKing(state, kingCoords: Coords): boolean {
@@ -1008,7 +1075,7 @@ class Tafl implements Game {
       })
     }
 
-    if (state.boardHistory[this.getBoardHash(state)] === state.rules[TaflRule.REPETITION_TURN_LIMIT]) {
+    if (state.boardHistory[this.getBoardHash(state.board)] === state.rules[TaflRule.REPETITION_TURN_LIMIT]) {
       return Object.assign({}, state, {
         result: {
           winner: null,
@@ -1162,19 +1229,8 @@ class Tafl implements Game {
       { board: boardCopy },
     )
 
-    const boardHash = this.getBoardHash(state)
-    const boardHistoryCopy = Object.assign({}, state.boardHistory)
-    if (!(boardHash in boardHistoryCopy)) {
-      boardHistoryCopy[boardHash] = 0
-    }
-    boardHistoryCopy[boardHash] += 1
-
-    const boardHashSavedState = Object.assign({},
-      capturedPiecesState,
-      { boardHistory: boardHistoryCopy }
-    )
-
-    const gameOverState = this.isGameOver(boardHashSavedState)
+    const boardAddedToHistoryState = this.addBoardToHistory(capturedPiecesState, boardCopy)
+    const gameOverState = this.isGameOver(boardAddedToHistoryState)
     return Object.assign({}, gameOverState, { turn: state.turn + 1 })
   }
 }
