@@ -11,17 +11,18 @@ npm install tafl
 ```
 
 ## Features
-These behaviors can be modified with rules:
+This library has support for these:
 
-- [X] Exit forts
-- [X] Shieldwall captures
+- [X] Defenders can build exit forts (edge forts) on the sides for the king to can run win the game
+- [X] Both sides can capture multiple pieces on the side with shieldwall captures
+- [X] If attackers surround all defender pieces, game ends
 - [X] King can escape from edges (in addition to corners, usually used in smaller boards)
-- [X] King armed or not
-- [X] King can return to center or not
-- [X] Attackers can capture with 2, 3, or 4 pieces
-- [X] Game starts with attackers or defenders
-- [X] Width of corners, usually corners are one piece, but in Alea Evangelii variation, corners are 2x2
-- [X] Repetition turn limit (On copenhagen game draws on [Threefold repetition](https://en.wikipedia.org/wiki/Threefold_repetition), you can modify this number)
+- [X] King can be armed or not. Armed kings can help with capturing pieces.
+- [X] King can return to center or not. In some variations, returning to center base is not possible.
+- [X] Attackers can capture the king with 2, 3, or 4 pieces. In Copenhagen, king has to be surrounded from 4 sides, but this behavior can be modified.
+- [X] Setting the starting side for the game. In Copenhagen, attackers start the game.
+- [X] Changing the width of corners. Usually corners are one piece, but in Alea Evangelii variation, corners are 2x2
+- [X] Game ends on 3-fold repetition. The repeating board states do not have to be in succession. You can modify this number (3) through rules.
 
 ## Basic example
 Uses Copenhagen rules on 11x11 board, plays both sides with random agent
@@ -87,15 +88,18 @@ You can pass a custom board to the `tafl.initialState`. Here are some of the sta
 ### TaflRule
 Used as an enum, and maps to string values. Use these to change the behavior of the game. See examples for usage.
 
-- `TaflRule.KING_IS_ARMED`
-- `TaflRule.KING_CAN_RETURN_TO_CENTER`
-- `TaflRule.ATTACKER_COUNT_TO_CAPTURE`
-- `TaflRule.SHIELD_WALLS`
-- `TaflRule.EXIT_FORTS`
-- `TaflRule.EDGE_ESCAPE`
-- `TaflRule.CORNER_BASE_WIDTH`
-- `TaflRule.STARTING_SIDE`
-- `TaflRule.REPETITION_TURN_LIMIT`
+| TaflRule name | Type  | Default (In `TaflRuleset.COPENHAGEN` ) |  Description |
+|---------------|-------|---------------------------------|--------------|
+| `TaflRule.EXIT_FORTS` | Boolean | true | Exit forts   |
+| `TaflRule.SHIELD_WALLS` | Boolean | true | Shieldwall captures |
+| `TaflRule.EDGE_ESCAPE` | Boolean | false | King can escape from edges (in addition to corners, usually used in smaller boards)     |
+| `TaflRule.KING_IS_ARMED` | Boolean | true | King armed or not |
+| `TaflRule.KING_CAN_RETURN_TO_CENTER` | Boolean | true | King can return to center or not |
+| `TaflRule.ATTACKER_COUNT_TO_CAPTURE` | Number | 4 | Attackers can capture with 2, 3, or 4 pieces |
+| `TaflRule.STARTING_SIDE` | TaflSide | TaflSide.ATTACKER | Game starts with attackers or defenders |
+| `TaflRule.CORNER_BASE_WIDTH` | Number | 1 | Width of corners, usually corners are one piece, but in Alea Evangelii variation, corners are 2x2 |
+| `TaflRule.REPETITION_TURN_LIMIT` | Number | 3 | Repetition turn limit (On copenhagen game draws on [Threefold repetition](https://en.wikipedia.org/wiki/Threefold_repetition), you can modify this number). You can disable draw on repetititon by setting this to -1. |
+
 
 ### TaflRuleSet
 Used as an enum, used for grouping rules to access with a single name. Only has `COPENHAGEN` value for now. See examples for usage.
