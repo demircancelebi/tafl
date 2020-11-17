@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.3.0](https://github.com/demircancelebi/tafl/compare/v2.2.0...v2.3.0) (2020-11-17)
+
+
+### Features
+
+* **speed:** add SAVE_BOARD_HISTORY and SAVE_ACTIONS options ([146d835](https://github.com/demircancelebi/tafl/commit/146d835db87a08085d625c780ba71ec3d20ff0b9))
+
 ## [2.2.0](https://github.com/demircancelebi/tafl/compare/v2.1.3...v2.2.0) (2020-11-16)
 
 
