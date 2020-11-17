@@ -199,6 +199,8 @@ canBeCaptured(state: any, coords: Coords, side: TaflSide): boolean;
 checkCaptures(state: any): Array<Coords>;
 checkShieldWalls(state: any): Array<Coords>;
 getBoardHash(state: any): string;
+addBoardToHistory(state: any, board: any): typeof state;
+getEquivalentBoards(board: any): {};
 getPossibleActions(state: any, side?: TaflSide): Array<MoveAction>;
 // Given a state, returns all possible actions that can be chosen
 isActionPossible(state: any, act: MoveAction): boolean;
