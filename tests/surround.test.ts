@@ -6,7 +6,7 @@ const D = Piece.PD
 const K = Piece.PK
 const _ = Piece.__
 
-test("Surrounding should work if there is no a defender outside", () => {
+test("Surrounding should work if there is no defender outside", () => {
   expect(tafl.didAttackersSurroundDefenders({
     board: [
       [_, _, _, _, _, _, _, _, _, _, _],

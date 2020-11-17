@@ -173,6 +173,8 @@ TaflRule.EXIT_FORTS = 'exitForts';
 TaflRule.EDGE_ESCAPE = 'edgeEscape';
 TaflRule.CORNER_BASE_WIDTH = 'cornerBaseWidth';
 TaflRule.STARTING_SIDE = 'startingSide';
+TaflRule.SAVE_BOARD_HISTORY = 'saveBoardHistory';
+TaflRule.SAVE_ACTIONS = 'saveActions';
 class TaflRuleSet extends RuleSet {
 }
 exports.TaflRuleSet = TaflRuleSet;
@@ -185,7 +187,9 @@ TaflRuleSet.COPENHAGEN = {
     [TaflRule.EXIT_FORTS]: true,
     [TaflRule.EDGE_ESCAPE]: false,
     [TaflRule.CORNER_BASE_WIDTH]: 1,
-    [TaflRule.STARTING_SIDE]: TaflSide.ATTACKER
+    [TaflRule.STARTING_SIDE]: TaflSide.ATTACKER,
+    [TaflRule.SAVE_BOARD_HISTORY]: true,
+    [TaflRule.SAVE_ACTIONS]: true,
 };
 function rotateLeft(array) {
     var result = [];
@@ -897,12 +901,12 @@ class Tafl {
                 result: Object.assign(Object.assign({}, state.result), { finished: false })
             });
         }
-        if (state.boardHistory[this.getBoardHash(state.board)] === state.rules[TaflRule.REPETITION_TURN_LIMIT]) {
+        if (state.rules[TaflRule.SAVE_BOARD_HISTORY] && state.boardHistory[this.getBoardHash(state.board)] === state.rules[TaflRule.REPETITION_TURN_LIMIT]) {
             return Object.assign({}, state, {
                 result: {
+                    finished: true,
                     winner: null,
-                    desc: 'Draw on repetition',
-                    finished: true
+                    desc: 'Draw on repetition'
                 }
             });
         }
@@ -999,10 +1003,11 @@ class Tafl {
             }
         }
         const canOpponentMove = this.canMakeAMove(state, this.opponentSide(state));
-        return Object.assign({}, state, { result: {
+        return Object.assign({}, state, {
+            result: {
                 finished: !canOpponentMove,
                 winner: !canOpponentMove ? this.turnSide(state) : null,
-                desc: ''
+                desc: !canOpponentMove ? 'No move left for opponent' : 'Game continues...'
             }
         });
     }
@@ -1013,13 +1018,16 @@ class Tafl {
         const boardCopy = state.board.map(function (arr) {
             return arr.slice();
         });
-        const actionsCopy = state.actions.slice();
         const fr = moveAction.from.r;
         const fc = moveAction.from.c;
         boardCopy[moveAction.to.r][moveAction.to.c] = this.pieceAt(state, moveAction.from);
         boardCopy[fr][fc] = Piece.__;
-        actionsCopy.push(moveAction);
-        const playerMovedState = Object.assign({}, state, { actions: actionsCopy }, { lastAction: moveAction }, { board: boardCopy });
+        let actionsCopy;
+        if (state.rules[TaflRule.SAVE_ACTIONS]) {
+            actionsCopy = state.actions.slice();
+            actionsCopy.push(moveAction);
+        }
+        const playerMovedState = Object.assign({}, state, { lastAction: moveAction }, { board: boardCopy }, (state.rules[TaflRule.SAVE_ACTIONS]) ? { actions: actionsCopy } : {});
         const captureds = this.checkCaptures(playerMovedState);
         if (captureds.length > 0) {
             for (const capturedCoords of captureds) {
@@ -1027,8 +1035,14 @@ class Tafl {
             }
         }
         const capturedPiecesState = Object.assign({}, playerMovedState, { board: boardCopy });
-        const boardAddedToHistoryState = this.addBoardToHistory(capturedPiecesState, boardCopy);
-        const gameOverState = this.isGameOver(boardAddedToHistoryState);
+        let gameOverState;
+        if (state.rules[TaflRule.SAVE_BOARD_HISTORY]) {
+            const boardAddedToHistoryState = this.addBoardToHistory(capturedPiecesState, boardCopy);
+            gameOverState = this.isGameOver(boardAddedToHistoryState);
+        }
+        else {
+            gameOverState = this.isGameOver(capturedPiecesState);
+        }
         return Object.assign({}, gameOverState, { turn: state.turn + 1 });
     }
 }

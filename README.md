@@ -99,7 +99,9 @@ Used as an enum, and maps to string values. Use these to change the behavior of 
 | `TaflRule.ATTACKER_COUNT_TO_CAPTURE` | Number | 4 | Attackers can capture with 2, 3, or 4 pieces |
 | `TaflRule.STARTING_SIDE` | TaflSide | TaflSide.ATTACKER | Game starts with attackers or defenders |
 | `TaflRule.CORNER_BASE_WIDTH` | Number | 1 | Width of corners, usually corners are one piece, but in Alea Evangelii variation, corners are 2x2 |
-| `TaflRule.REPETITION_TURN_LIMIT` | Number | 3 | Repetition turn limit (On copenhagen game draws on [Threefold repetition](https://en.wikipedia.org/wiki/Threefold_repetition), you can modify this number). You can disable draw on repetititon by setting this to -1. |
+| `TaflRule.REPETITION_TURN_LIMIT` | Number | 3 | Repetition turn limit (On copenhagen game draws on [Threefold repetition](https://en.wikipedia.org/wiki/Threefold_repetition), you can modify this number). You can disable `draw on repetititon` by setting `TaflRule.SAVE_BOARD_HISTORY` to `false` |
+| `TaflRule.SAVE_BOARD_HISTORY` | Boolean | true | If you don't save board history, repetition checks are not disabled. You may want to set this to false for simulations as it has a big effect on speed. |
+| `TaflRule.SAVE_ACTIONS` | Boolean | true | Saving actions may not be required for simulations. You may want to set this to false for simulations, but it has a tiny effect on speed. |
 
 
 ### TaflRuleSet
@@ -119,7 +121,8 @@ let state = tafl.initialState({
   rules: {
     ...TaflRuleSet.COPENHAGEN,
     [TaflRule.EDGE_ESCAPE]: true,
-    [TaflRule.CORNER_BASE_WIDTH]: 2
+    [TaflRule.CORNER_BASE_WIDTH]: 2,
+    [TaflRule.SAVE_BOARD_HISTORY]: false
   }
 })
 
