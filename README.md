@@ -13,17 +13,19 @@ npm install tafl
 ## Features
 This library has support for these:
 
-- [X] Defenders can build exit forts (edge forts) on the sides for the king to run and win the game `TaflRule.EXIT_FORTS`
-- [X] Both sides can capture multiple pieces on the sides with shieldwall captures `TaflRule.SHIELD_WALLS`
+- [X] **Exit forts:** Defenders can build exit forts (edge forts) on the sides for the king to run and win the game
+- [X] **Shieldwall:** Both sides can capture multiple pieces on the sides with shieldwall captures 
+- [X] **Repetition checks:** Game ends on 3-fold repetition. The repeating board states do not have to be in succession. You can modify this number (3) through rules.
 - [X] If attackers surround all defender pieces, game ends
 - [X] If any side has no moves left, they lose
-- [X] King can escape from edges optionally (in addition to corners, usually used in smaller boards) `TaflRule.EDGE_ESCAPE`
-- [X] King can be armed or not. Armed kings can help with capturing pieces. `TaflRule.KING_IS_ARMED`
-- [X] King can return to center or not. In some variations, returning to center base is not possible. `TaflRule.KING_CAN_RETURN_TO_CENTER`
-- [X] Attackers can capture the king with 2, 3, or 4 pieces. In Copenhagen, king has to be surrounded from 4 sides, but this behavior can be modified. `TaflRule.ATTACKER_COUNT_TO_CAPTURE`
-- [X] Setting the starting side for the game. In Copenhagen, attackers start the game. `TaflRule.STARTING_SIDE`
-- [X] Changing the width of corners. Usually corners are one piece, but in Alea Evangelii variation, corners are 2x2 `TaflRule.CORNER_BASE_WIDTH`
-- [X] Game ends on 3-fold repetition. The repeating board states do not have to be in succession. You can modify this number (3) through rules. `TaflRule.REPETITION_TURN_LIMIT`
+- [X] King can escape from edges optionally (in addition to corners, usually used in smaller boards)
+- [X] King can be armed or not. Armed kings can help with capturing pieces.
+- [X] King can return to center or not. In some variations of the game, returning to center base is forbidden.
+- [X] Attackers can capture the king with 2, 3, or 4 pieces. In Copenhagen, king has to be surrounded from 4 sides, but this behavior can be modified.
+- [X] Setting the starting side for the game. In Copenhagen, attackers start the game.
+- [X] Changing the width of corners. Usually corners are one square, but in Alea Evangelii variation, corners are 2x2
+
+You can use the library with an arbitrary game state. (set the board/rules as you'd like and start using the library from that game state, useful for setting up specific board states)
 
 ## Basic example
 Uses Copenhagen rules on 11x11 board, plays both sides with random agent
@@ -32,7 +34,7 @@ Uses Copenhagen rules on 11x11 board, plays both sides with random agent
 const { Tafl } = require('tafl')
 
 const tafl = new Tafl()
-let state = tafl.initialState() // by default uses Copenhagen rules on 11x11 board
+let state = tafl.initialState() // by default uses Copenhagen rules on 11x11 board with the classical starting position, you can use a different state if you want
 
 while (!state.result.finished) {
   const possibleActions = tafl.getPossibleActions(state)
@@ -100,8 +102,8 @@ Used as an enum, and maps to string values. Use these to change the behavior of 
 | `TaflRule.STARTING_SIDE` | TaflSide | TaflSide.ATTACKER | Game starts with attackers or defenders |
 | `TaflRule.CORNER_BASE_WIDTH` | Number | 1 | Width of corners, usually corners are one piece, but in Alea Evangelii variation, corners are 2x2 |
 | `TaflRule.REPETITION_TURN_LIMIT` | Number | 3 | Repetition turn limit (On copenhagen game draws on [Threefold repetition](https://en.wikipedia.org/wiki/Threefold_repetition), you can modify this number). You can disable `draw on repetititon` by setting `TaflRule.SAVE_BOARD_HISTORY` to `false` |
-| `TaflRule.SAVE_BOARD_HISTORY` | Boolean | true | If you don't save board history, repetition checks are not disabled. You may want to set this to false for simulations as it has a big effect on speed. |
-| `TaflRule.SAVE_ACTIONS` | Boolean | true | Saving actions may not be required for simulations. You may want to set this to false for simulations, but it has a tiny effect on speed. |
+| `TaflRule.SAVE_BOARD_HISTORY` | Boolean | true | If set to `false`, repetition checks are disabled. If you are running many simulations and can live without repetition checks, set to `false` as it may allow an order of magnitude more simulations in a given time. Otherwise should be `true`. |
+| `TaflRule.SAVE_ACTIONS` | Boolean | true | Saving actions may not be required for simulations. Although this has a tiny effect on performance, you may want to set this to `false` too. |
 
 
 ### TaflRuleSet
