@@ -1,8 +1,7 @@
 {
   "name": "tafl",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "description": "A Typescript library for Hnefatafl (Viking Chess, or Tafl) that is used for move generation/validation, piece placement/movement, and game over detection. You can use it to simulate games between AI agents - written for this purpose, and also serves as the backbone of Litafl.com (a website where you can match with other Hnefatafl players online).",
-  "prepublish": "tsc",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "devDependencies": {
@@ -15,6 +14,7 @@
     "typescript": "^4.0.5"
   },
   "scripts": {
+    "prepack": "tsc",
     "release": "standard-version",
     "test": "jest"
   },

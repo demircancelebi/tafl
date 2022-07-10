@@ -1584,5 +1584,3 @@ export class Tafl implements Game {
     return Object.assign({}, gameOverState, { turn: state.turn! + 1 });
   }
 }
-
-// export { Piece, Tafl, TaflBoard, TaflRule, TaflRuleSet };
