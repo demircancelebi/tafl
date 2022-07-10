@@ -1,13 +1,18 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2016",
+    "target": "esnext",
     "jsx": "preserve",
+    "outDir": "dist",
+    "types": ["node", "jest"],
+    "strict": true,
+    "declaration": true,
     "sourceMap": true,
     "esModuleInterop": true,
   },
   "exclude": [
     "node_modules",
+    "dist",
     "**/node_modules/*"
   ]
 }

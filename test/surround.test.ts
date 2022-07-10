@@ -1,14 +1,14 @@
-import { Tafl, Piece } from "../index";
+import { Tafl, Piece } from "../src/index";
 
-const tafl = new Tafl()
-const A = Piece.PA
-const D = Piece.PD
-const K = Piece.PK
-const _ = Piece.__
+const tafl = new Tafl();
+const A = Piece.PA;
+const D = Piece.PD;
+const K = Piece.PK;
+const _ = Piece.__;
 
 test("Surrounding should work if there is no defender outside", () => {
-  expect(tafl.didAttackersSurroundDefenders({
-    board: [
+  expect(
+    tafl.didAttackersSurroundDefenders([
       [_, _, _, _, _, _, _, _, _, _, _],
       [_, _, _, _, _, _, _, _, _, _, _],
       [_, _, _, _, _, _, _, _, _, _, _],
@@ -20,13 +20,13 @@ test("Surrounding should work if there is no defender outside", () => {
       [_, _, _, _, _, _, _, _, _, _, _],
       [_, _, _, _, _, _, _, _, _, _, _],
       [_, _, _, _, _, _, _, _, _, _, _],
-    ]
-  })).toBe(true)
-})
+    ])
+  ).toBe(true);
+});
 
 test("Surrounding should not work if there is a defender outside", () => {
-  expect(tafl.didAttackersSurroundDefenders({
-    board: [
+  expect(
+    tafl.didAttackersSurroundDefenders([
       [_, _, _, _, _, _, _, _, _, _, _],
       [_, _, _, _, _, _, _, _, _, _, _],
       [_, _, _, D, _, _, _, _, _, _, _],
@@ -38,13 +38,13 @@ test("Surrounding should not work if there is a defender outside", () => {
       [_, _, _, _, _, _, _, _, _, _, _],
       [_, _, _, _, _, _, _, _, _, _, _],
       [_, _, _, _, _, _, _, _, _, _, _],
-    ]
-  })).toBe(false)
-})
+    ])
+  ).toBe(false);
+});
 
 test("Surrounding attackers should be equal to true", () => {
-  expect(tafl.didAttackersSurroundDefenders({
-    board: [
+  expect(
+    tafl.didAttackersSurroundDefenders([
       [_, _, _, _, _, _, _, _, A, A, _],
       [_, A, A, A, A, A, A, _, _, _, _],
       [_, A, _, _, D, _, _, A, _, _, _],
@@ -56,13 +56,13 @@ test("Surrounding attackers should be equal to true", () => {
       [_, _, A, _, A, _, _, A, _, _, _],
       [_, _, _, A, A, _, A, _, _, A, _],
       [_, _, _, _, _, _, _, _, _, _, _],
-    ]
-  })).toBe(true)
-})
+    ])
+  ).toBe(true);
+});
 
 test("Spiral of attackers does not surround defenders", () => {
-  expect(tafl.didAttackersSurroundDefenders({
-    board: [
+  expect(
+    tafl.didAttackersSurroundDefenders([
       [_, _, _, _, _, _, _, _, A, _, _],
       [_, _, _, A, A, A, A, _, _, A, _],
       [_, _, A, _, D, D, D, A, _, _, A],
@@ -74,13 +74,13 @@ test("Spiral of attackers does not surround defenders", () => {
       [_, _, A, _, _, _, _, _, A, _, _],
       [_, _, _, A, A, A, A, A, _, _, _],
       [_, _, _, _, _, _, _, _, _, _, _],
-    ]
-  })).toBe(false)
-})
+    ])
+  ).toBe(false);
+});
 
 test("Closed spiral of attackers surround defenders", () => {
-  expect(tafl.didAttackersSurroundDefenders({
-    board: [
+  expect(
+    tafl.didAttackersSurroundDefenders([
       [_, _, _, _, _, _, _, A, A, _, _],
       [_, _, _, A, A, A, A, _, _, A, _],
       [_, _, A, _, D, D, D, A, _, _, A],
@@ -92,13 +92,13 @@ test("Closed spiral of attackers surround defenders", () => {
       [_, _, A, _, _, _, _, _, A, _, _],
       [_, _, _, A, A, A, A, A, _, _, _],
       [_, _, _, _, _, _, _, _, _, _, _],
-    ]
-  })).toBe(true)
-})
+    ])
+  ).toBe(true);
+});
 
 test("Two layers of attackers does not surround if there is a hole", () => {
-  expect(tafl.didAttackersSurroundDefenders({
-    board: [
+  expect(
+    tafl.didAttackersSurroundDefenders([
       [_, _, _, _, _, _, _, _, _, _, _],
       [_, A, A, A, A, A, A, A, A, A, A],
       [_, _, A, _, _, _, _, _, _, _, A],
@@ -110,13 +110,13 @@ test("Two layers of attackers does not surround if there is a hole", () => {
       [_, A, _, _, _, A, _, A, _, _, A],
       [_, _, A, A, A, A, _, _, A, A, _],
       [_, _, _, _, _, _, _, _, _, _, _],
-    ]
-  })).toBe(false)
-})
+    ])
+  ).toBe(false);
+});
 
 test("Second layer of attackers surround if defenders are between layers", () => {
-  expect(tafl.didAttackersSurroundDefenders({
-    board: [
+  expect(
+    tafl.didAttackersSurroundDefenders([
       [_, _, _, _, _, _, _, _, _, _, _],
       [_, _, A, A, A, A, A, A, A, A, A],
       [_, A, _, _, _, _, _, _, _, _, A],
@@ -128,13 +128,13 @@ test("Second layer of attackers surround if defenders are between layers", () =>
       [_, A, _, D, A, A, A, A, _, A, _],
       [_, A, _, _, D, _, _, _, _, A, _],
       [_, _, A, A, A, A, A, A, A, A, _],
-    ]
-  })).toBe(true)
-})
+    ])
+  ).toBe(true);
+});
 
 test("Two layers of attackers does not surround if there is a defender outside", () => {
-  expect(tafl.didAttackersSurroundDefenders({
-    board: [
+  expect(
+    tafl.didAttackersSurroundDefenders([
       [_, _, _, _, _, _, _, _, _, _, _],
       [_, _, A, A, A, A, A, A, A, A, A],
       [_, A, _, _, _, _, _, _, _, _, A],
@@ -146,13 +146,13 @@ test("Two layers of attackers does not surround if there is a defender outside",
       [_, A, _, D, A, A, A, A, _, A, _],
       [_, A, _, _, D, _, _, _, _, A, _],
       [_, _, A, A, A, A, A, A, A, A, _],
-    ]
-  })).toBe(false)
-})
+    ])
+  ).toBe(false);
+});
 
 test("Start position does not surround defenders", () => {
-  expect(tafl.didAttackersSurroundDefenders({
-    board: [
+  expect(
+    tafl.didAttackersSurroundDefenders([
       [_, _, _, A, A, A, A, A, _, _, _],
       [_, _, _, _, _, A, _, _, _, _, _],
       [_, _, _, _, _, _, _, _, _, _, _],
@@ -164,6 +164,6 @@ test("Start position does not surround defenders", () => {
       [_, _, _, _, _, _, _, _, _, _, _],
       [_, _, _, _, _, A, _, _, _, _, _],
       [_, _, _, A, A, A, A, A, _, _, _],
-    ]
-  })).toBe(false)
-})
+    ])
+  ).toBe(false);
+});
