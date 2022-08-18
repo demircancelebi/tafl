@@ -29,7 +29,7 @@ export enum Piece {
 }
 export type Board = Array<Array<Piece>>;
 
-interface GameState {
+export interface GameState {
   board?: Board;
   actions?: Array<MoveAction>;
   boardHistory?: Record<string, number>;
