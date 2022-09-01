@@ -14,7 +14,7 @@ npm install tafl
 This library has support for these:
 
 - [X] **Exit forts:** Defenders can build exit forts (edge forts) on the sides for the king to run and win the game
-- [X] **Shieldwall:** Both sides can capture multiple pieces on the sides with shieldwall captures 
+- [X] **Shieldwall:** Both sides can capture multiple pieces on the sides with shieldwall captures
 - [X] **Repetition checks:** Game ends on 3-fold repetition. The repeating board states do not have to be in succession. You can modify this number (3) through rules.
 - [X] If attackers surround all defender pieces, game ends
 - [X] If any side has no moves left, they lose
@@ -149,69 +149,109 @@ tafl.log({ turn: state.turn, result: state.result, lastAction: state.lastAction,
 //         [ ' ', ' ', ' ', 'A', ' ', ' ', ' ' ] ] }
 ```
 
-## Methods & properties
+## Interfaces & properties & methods
+### Interfaces
+```ts
+interface Named {
+  name: String;
+}
+interface Coords {
+  readonly r: number;
+  readonly c: number;
+}
+interface MoveAction {
+  from: Coords;
+  to: Coords;
+}
+interface Game extends Named {
+  getPossibleActions(state: GameState): MoveAction[];
+  isActionPossible(state: GameState, action: MoveAction): boolean;
+  isGameOver(state: GameState): typeof state;
+  act(state: GameState, action: MoveAction): typeof state;
+}
+
+export declare type Board = Array<Array<Piece>>;
+export interface GameState {
+  board?: Board;
+  actions?: Array<MoveAction>;
+  boardHistory?: Record<string, number>;
+  turn?: number;
+  result?: {
+    finished: boolean;
+    winner?: TaflSide;
+    desc: string;
+  };
+  captures?: Array<Coords>;
+  lastAction?: MoveAction;
+  rules?: {
+    [key: string]: TaflRule;
+  };
+}
+```
+
+### Properties & Methods
 Full list of methods and properties, taken from type definitions file and is subject to change.
 
-```js
+```ts
 name: string;
 controlMap: Map<TaflSide, Set<Piece>>;
 sideMap: Map<Piece, TaflSide>;
-initialState(init?: any): GameState;
+initialState(init?: GameState): GameState;
 log(thing: any): void;
-isCenter(state: any, coords: Coords): boolean;
-isCorner(state: any, coords: Coords): boolean;
-isEdge(state: any, coords: Coords): boolean;
+isCenter(board: Board, coords: Coords): boolean;
+isCorner(state: GameState, coords: Coords): boolean;
+isEdge(state: GameState, coords: Coords): boolean;
 repr(coords: Coords): String;
 coords(repr: String): Coords;
-toPathRepr(...args: any[]): String;
+toPathRepr(...args: Array<Coords>): String;
 toPathCoords(path: String): Array<Coords>;
-insideBounds(state: any, coords: Coords): boolean;
-connectedPieces(state: any, coords: Coords, side: TaflSide): Set<String>;
-connectedDefenders(state: any, coords: Coords): Set<String>;
-connectedAttackers(state: any, coords: Coords): Set<String>;
-possiblySurroundingPieces(state: any, kingCoords: Coords, side: TaflSide): Array<Coords>;
-possiblySurrondingDefenders(state: any, kingCoords: Coords): Array<Coords>;
-possiblySurrondingAttackers(state: any, kingCoords: Coords): Array<Coords>;
-isInsideEye(state: any, coords: Coords, fullFortStructure: Set<String>): boolean;
-getPossibleSmallestFortStructure(state: any, innerSet: Set<String>, fullStructure: Set<String>): Set<String>;
-getEmptyPiecesAndOpponentsInsideSmallestClosedStructure(state: any, kingCoords: Coords, closedStructure: Set<String>, oppSide?: TaflSide): Array<Set<String>>;
-getEmptyPiecesAndAttackersInsideSmallestFort(state: any, kingCoords: Coords, fullFortStructure: Set<String>): Array<Set<String>>;
-insideFort(state: any, kingCoords: Coords): boolean;
-kingEscapedThroughFort(state: any): boolean;
-isBase(state: any, coords: Coords): boolean;
-isEmpty(state: any, coords: Coords): boolean;
-isEmptyBase(state: any, coords: Coords): boolean;
-isKing(state: any, coords: Coords): boolean;
-isAttacker(state: any, coords: Coords): boolean;
-isDefender(state: any, coords: Coords): boolean;
-isDfOrKing(state: any, coords: Coords): boolean;
-canHelpCapture(state: any, coords: Coords, canHelp: TaflSide): boolean;
-turnSide(state: any): TaflSide;
-opponentSide(state: any): TaflSide;
+insideBounds(board: Board, coords: Coords): boolean;
+connectedPieces(board: Board, coords: Coords, side: TaflSide): Set<String>;
+connectedDefenders(board: Board, coords: Coords): Set<String>;
+connectedAttackers(board: Board, coords: Coords): Set<String>;
+possiblySurroundingPieces(board: Board, kingCoords: Coords, side: TaflSide): Array<Coords>;
+possiblySurrondingDefenders(board: Board, kingCoords: Coords): Array<Coords>;
+possiblySurrondingAttackers(board: Board, kingCoords: Coords): Array<Coords>;
+isInsideEye(board: Board, coords: Coords, fullFortStructure: Set<String>): boolean;
+getPossibleSmallestFortStructure(board: Board, innerSet: Set<String>, fullStructure: Set<String>): Set<String>;
+getEmptyPiecesAndOpponentsInsideSmallestClosedStructure(board: Board, kingCoords: Coords, closedStructure: Set<String>, oppSide?: TaflSide): Array<Set<String>>;
+getEmptyPiecesAndAttackersInsideSmallestFort(board: Board, kingCoords: Coords, fullFortStructure: Set<String>): Array<Set<String>>;
+insideFort(board: Board, kingCoords: Coords): boolean;
+kingEscapedThroughFort(state: GameState): boolean;
+isBase(state: GameState, coords: Coords): boolean;
+isEmpty(board: Board, coords: Coords): boolean;
+isEmptyBase(state: GameState, coords: Coords): boolean;
+isKing(board: Board, coords: Coords): boolean;
+isAttacker(board: Board, coords: Coords): boolean;
+isDefender(board: Board, coords: Coords): boolean;
+isDefenderOrKing(board: Board, coords: Coords): boolean;
+canHelpCapture(state: GameState, coords: Coords, canHelp: TaflSide): boolean;
+turnSide(state: GameState): TaflSide;
+opponentSide(state: GameState): TaflSide;
 canControl(side: TaflSide, piece: Piece): boolean;
-sideOfPiece(piece: Piece): TaflSide;
-pieceAt(state: any, coords: Coords): Piece;
-canMovePieceHere(state: any, piece: Piece, coords: Coords): boolean;
-getPossibleMovesFrom(state: any, coords: Coords): Array<Coords>;
-canMakeAMove(state: any, side: TaflSide): boolean;
-getKingCoords(state: any): Coords;
-didAttackersSurroundDefenders(state: any): boolean;
-fortSearchFromKing(state: any, kingCoords: Coords): boolean;
-canBeCaptured(state: any, coords: Coords, side: TaflSide): boolean;
-checkCaptures(state: any): Array<Coords>;
-checkShieldWalls(state: any): Array<Coords>;
-getBoardHash(state: any): string;
-addBoardToHistory(state: any, board: any): typeof state;
-getEquivalentBoards(board: any): {};
-getPossibleActions(state: any, side?: TaflSide): Array<MoveAction>;
+sideOfPiece(piece: Piece): TaflSide | undefined;
+pieceAt(board: Board, coords: Coords): Piece;
+canMovePieceHere(state: GameState, piece: Piece, coords: Coords): boolean;
+getPossibleMovesFrom(state: GameState, coords: Coords): Array<Coords>;
+canMakeAMove(state: GameState, side: TaflSide): boolean;
+getKingCoords(board: Board): Coords;
+didAttackersSurroundDefenders(board: Board): boolean;
+canBeCaptured(board: Board, coords: Coords, side: TaflSide): boolean;
+checkCaptures(state: GameState): Array<Coords>;
+checkShieldWalls(state: GameState): Array<Coords>;
+getBoardHash(board: Board): string;
+addBoardToHistory(state: GameState, board: Board): typeof state;
+getEquivalentBoards(board: Board): Record<string, Board>;
+fortSearchFromKing(board: Board, kingCoords: Coords): boolean;
+getPossibleActions(state: GameState, side?: TaflSide): Array<MoveAction>;
 // Given a state, returns all possible actions that can be chosen
-isActionPossible(state: any, act: MoveAction): boolean;
+isActionPossible(state: GameState, act: MoveAction): boolean;
 // Returns true if action is possible in given state, false otherwise
-isGameOver(state: any): typeof state;
+isGameOver(state: GameState): typeof state;
 // Given a state, returns new state with game over information. If game is over, returned state object will have `{result: { finished: true }}` with additional information like `result.winner` and `result.desc`.
-act(state: any, moveAction: MoveAction): typeof state;
+act(state: GameState, moveAction: MoveAction): typeof state;
 // Given a state and an action, applies that action and returns the new state.
 ```
 
 ## Author
-Created by Demircan Celebi in 2020 for use at https://litafl.com/tafl
+Created by Demircan Celebi in 2020-2022 for use at https://litafl.com/tafl

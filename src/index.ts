@@ -39,6 +39,7 @@ export interface GameState {
     winner?: TaflSide;
     desc: string;
   };
+  captures?: Array<Coords>;
   lastAction?: MoveAction;
   rules?: { [key: string]: TaflRule };
 }
@@ -1568,6 +1569,7 @@ export class Tafl implements Game {
 
     const capturedPiecesState = Object.assign({}, playerMovedState, {
       board: boardCopy,
+      captures: captureds,
     });
 
     let gameOverState;
