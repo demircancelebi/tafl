@@ -16,7 +16,8 @@
   "scripts": {
     "prepack": "tsc",
     "release": "standard-version",
-    "test": "jest"
+    "test": "jest",
+    "bench": "npm run prepack && node benchmark/perf.js"
   },
   "repository": {
     "type": "git",

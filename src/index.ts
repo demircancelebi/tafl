@@ -1,5 +1,3 @@
-import crypto from "crypto";
-
 interface Named {
   name: String;
 }
@@ -236,6 +234,64 @@ function rotateLeft<T>(array: Array<Array<T>>): Array<Array<T>> {
   return result;
 }
 
+const ORTHOGONAL_DIRECTIONS: ReadonlyArray<Coords> = [
+  { r: -1, c: 0 },
+  { r: 1, c: 0 },
+  { r: 0, c: -1 },
+  { r: 0, c: 1 },
+];
+
+function cloneBoard(board: Board): Board {
+  return board.map((row) => row.slice());
+}
+
+function getSymmetryVariants(board: Board): Board[] {
+  const b = cloneBoard(board);
+
+  const variants: Board[] = [];
+  let rotated = b;
+  for (let i = 0; i < 4; i += 1) {
+    variants.push(rotated);
+    rotated = rotateLeft(rotated);
+  }
+
+  const mirrored = b.slice().reverse();
+  let mirroredRotated = mirrored;
+  for (let i = 0; i < 4; i += 1) {
+    variants.push(mirroredRotated);
+    mirroredRotated = rotateLeft(mirroredRotated);
+  }
+
+  return variants;
+}
+
+function boardToKey(board: Board): string {
+  return board.map((row) => row.join("")).join("|");
+}
+
+function canonicalBoardKey(board: Board): string {
+  const variants = getSymmetryVariants(board);
+  let key = boardToKey(variants[0]);
+  for (let i = 1; i < variants.length; i += 1) {
+    const cur = boardToKey(variants[i]);
+    if (cur < key) {
+      key = cur;
+    }
+  }
+  return key;
+}
+
+const OPPOSITE_NEIGHBOR_PAIRS: ReadonlyArray<ReadonlyArray<Coords>> = [
+  [
+    { r: -1, c: 0 },
+    { r: 1, c: 0 },
+  ],
+  [
+    { r: 0, c: -1 },
+    { r: 0, c: 1 },
+  ],
+];
+
 export class Tafl implements Game {
   name = "Tafl";
 
@@ -251,19 +307,24 @@ export class Tafl implements Game {
   ]);
 
   initialState(init?: GameState): GameState {
-    const board = init?.board || TaflBoard._11_CLASSIC;
-    const hash = this.getBoardHash(board);
+    const sourceBoard = init?.board || TaflBoard._11_CLASSIC;
+    const board = cloneBoard(sourceBoard);
+    const rules = {
+      ...TaflRuleSet.COPENHAGEN,
+      ...(init?.rules || {}),
+    };
+    const historyKey = canonicalBoardKey(board);
     const initialState: GameState = {
       turn: 0,
       actions: [],
-      boardHistory: { [hash]: 1 },
+      boardHistory: { [historyKey]: 1 },
       result: {
         finished: false,
         winner: undefined,
         desc: "",
       },
       lastAction: undefined,
-      rules: init?.rules || TaflRuleSet.COPENHAGEN,
+      rules,
       board,
     };
 
@@ -397,21 +458,14 @@ export class Tafl implements Game {
     const processed = new Set<String>();
     const q = new Array<String>();
 
-    // we'll look in 4 directions starting from the king
-    const neighbors_4 = [
-      [-1, 0],
-      [0, -1],
-      [0, 1],
-      [1, 0],
-    ];
     q.push(this.repr(kingCoords));
 
     while (q.length > 0) {
       const curCoords = this.coords(q.pop()!);
-      for (const neighbor of neighbors_4) {
+      for (const neighbor of ORTHOGONAL_DIRECTIONS) {
         const neighborCoords: Coords = {
-          r: curCoords.r + neighbor[0],
-          c: curCoords.c + neighbor[1],
+          r: curCoords.r + neighbor.r,
+          c: curCoords.c + neighbor.c,
         };
         if (
           this.insideBounds(board, neighborCoords) &&
@@ -467,20 +521,13 @@ export class Tafl implements Game {
     fullStructure: Set<String>
   ): Set<String> {
     const processed = new Set<String>();
-    const neighbors_4 = [
-      [-1, 0],
-      [0, -1],
-      [0, 1],
-      [1, 0],
-    ];
-
     const smallest: Set<String> = new Set<String>();
     for (const innerRepr of innerSet) {
       const innerCoords = this.coords(innerRepr);
-      for (const neighbor of neighbors_4) {
+      for (const neighbor of ORTHOGONAL_DIRECTIONS) {
         const neighborCoords: Coords = {
-          r: innerCoords.r + neighbor[0],
-          c: innerCoords.c + neighbor[1],
+          r: innerCoords.r + neighbor.r,
+          c: innerCoords.c + neighbor.c,
         };
         if (
           this.insideBounds(board, neighborCoords) &&
@@ -511,14 +558,6 @@ export class Tafl implements Game {
     const processed = new Set<String>();
     const q = new Array<String>();
 
-    // we'll look in 4 directions starting from the king
-    const neighbors_4 = [
-      [-1, 0],
-      [0, -1],
-      [0, 1],
-      [1, 0],
-    ];
-
     q.push(this.repr(kingCoords));
 
     while (q.length > 0) {
@@ -541,10 +580,10 @@ export class Tafl implements Game {
             opponentSet.add(this.repr(curCoords));
           }
 
-          for (const neighbor of neighbors_4) {
+          for (const neighbor of ORTHOGONAL_DIRECTIONS) {
             const neighborCoords: Coords = {
-              r: curCoords.r + neighbor[0],
-              c: curCoords.c + neighbor[1],
+              r: curCoords.r + neighbor.r,
+              c: curCoords.c + neighbor.c,
             };
             q.push(this.repr(neighborCoords));
           }
@@ -570,35 +609,24 @@ export class Tafl implements Game {
   }
 
   insideFort(board: Board, kingCoords: Coords): boolean {
-    const kingOnTopRow = kingCoords.r === 0;
-    const kingOnBottomRow = kingCoords.r === board.length - 1;
-    const kingOnLeftmostCol = kingCoords.c === 0;
-    const kingOnRightmostCol = kingCoords.c === board.length - 1;
-
-    let res = false;
-    if (kingOnTopRow || kingOnBottomRow) {
-      const defenderCount = board[kingCoords.r].reduce((acc, cur) => {
-        const p = cur === Piece.PD ? 1 : 0;
-        return acc + p;
-      }, 0);
-
-      if (defenderCount >= 2) {
-        // at least 2 defenders are required for a fort
-        res = this.fortSearchFromKing(board, kingCoords);
-      }
-    } else if (kingOnLeftmostCol || kingOnRightmostCol) {
-      const defenderCount = board.reduce((acc, cur) => {
-        const p = cur[kingCoords.c] === Piece.PD ? 1 : 0;
-        return acc + p;
-      }, 0);
-
-      if (defenderCount >= 2) {
-        // at least 2 defenders are required for a fort
-        res = this.fortSearchFromKing(board, kingCoords);
-      }
+    const onTopOrBottom = kingCoords.r === 0 || kingCoords.r === board.length - 1;
+    const onLeftOrRight = kingCoords.c === 0 || kingCoords.c === board.length - 1;
+    if (!onTopOrBottom && !onLeftOrRight) {
+      return false;
     }
 
-    return res;
+    // at least 2 defenders are required for a fort
+    const defenderCount = onTopOrBottom
+      ? board[kingCoords.r].reduce(
+          (acc, piece) => acc + (piece === Piece.PD ? 1 : 0),
+          0
+        )
+      : board.reduce(
+          (acc, row) => acc + (row[kingCoords.c] === Piece.PD ? 1 : 0),
+          0
+        );
+
+    return defenderCount >= 2 && this.fortSearchFromKing(board, kingCoords);
   }
 
   kingEscapedThroughFort(state: GameState): boolean {
@@ -704,14 +732,14 @@ export class Tafl implements Game {
   }
 
   getPossibleMovesFrom(state: GameState, coords: Coords): Array<Coords> {
-    const row = coords.r;
-    const col = coords.c;
     const res: Coords[] = [];
     if (!state.board) {
       return [];
     }
 
     const piece: Piece = this.pieceAt(state.board, coords);
+    const row = coords.r;
+    const col = coords.c;
     const n = state.board.length;
 
     let rowCount = row - 1;
@@ -722,8 +750,8 @@ export class Tafl implements Game {
       res.push({ r: rowCount, c: col });
       rowCount -= 1;
     }
-    rowCount = row + 1;
 
+    rowCount = row + 1;
     while (
       rowCount <= n - 1 &&
       this.canMovePieceHere(state, piece, { r: rowCount, c: col })
@@ -757,7 +785,7 @@ export class Tafl implements Game {
     return this.getPossibleActions(state, side).length > 0;
   }
 
-  getKingCoords(board: Board): Coords {
+  getKingCoords(board: Board): Coords | undefined {
     let kingCoords = null;
     for (const _r in board) {
       const r = parseInt(_r, 10);
@@ -770,11 +798,14 @@ export class Tafl implements Game {
       }
     }
 
-    return kingCoords!;
+    return kingCoords || undefined;
   }
 
   didAttackersSurroundDefenders(board: Board): boolean {
     const kingCoords = this.getKingCoords(board);
+    if (!kingCoords) {
+      return false;
+    }
     let [top, right, bottom, left] = [0, 0, 0, 0];
 
     for (let r = 0; r < kingCoords.r; r += 1) {
@@ -840,9 +871,7 @@ export class Tafl implements Game {
     );
 
     if (defCount !== totCount) {
-      const boardCopy = board.map(function (row) {
-        return row.slice();
-      });
+      const boardCopy = cloneBoard(board);
       [...psaSet].map(this.coords).forEach((coords) => {
         boardCopy[coords.r][coords.c] = Piece.__;
       });
@@ -871,33 +900,18 @@ export class Tafl implements Game {
     const [lpr, lpc] = [state.lastAction.to.r, state.lastAction.to.c];
     const side = this.turnSide(state);
 
-    if (
-      lpr >= 2 &&
-      this.canHelpCapture(state, { r: lpr - 2, c: lpc }, side) &&
-      this.canBeCaptured(state.board, { r: lpr - 1, c: lpc }, side)
-    ) {
-      res.push({ r: lpr - 1, c: lpc });
-    }
-    if (
-      lpr <= state.board.length - 3 &&
-      this.canHelpCapture(state, { r: lpr + 2, c: lpc }, side) &&
-      this.canBeCaptured(state.board, { r: lpr + 1, c: lpc }, side)
-    ) {
-      res.push({ r: lpr + 1, c: lpc });
-    }
-    if (
-      lpc >= 2 &&
-      this.canHelpCapture(state, { r: lpr, c: lpc - 2 }, side) &&
-      this.canBeCaptured(state.board, { r: lpr, c: lpc - 1 }, side)
-    ) {
-      res.push({ r: lpr, c: lpc - 1 });
-    }
-    if (
-      lpc <= state.board.length - 3 &&
-      this.canHelpCapture(state, { r: lpr, c: lpc + 2 }, side) &&
-      this.canBeCaptured(state.board, { r: lpr, c: lpc + 1 }, side)
-    ) {
-      res.push({ r: lpr, c: lpc + 1 });
+    for (const direction of ORTHOGONAL_DIRECTIONS) {
+      const midCoords = { r: lpr + direction.r, c: lpc + direction.c };
+      const flankCoords = { r: lpr + 2 * direction.r, c: lpc + 2 * direction.c };
+
+      if (
+        this.insideBounds(state.board, midCoords) &&
+        this.insideBounds(state.board, flankCoords) &&
+        this.canHelpCapture(state, flankCoords, side) &&
+        this.canBeCaptured(state.board, midCoords, side)
+      ) {
+        res.push(midCoords);
+      }
     }
 
     if (state.rules?.[TaflRule.SHIELD_WALLS]!) {
@@ -1035,74 +1049,29 @@ export class Tafl implements Game {
   }
 
   getBoardHash(board: Board) {
-    const data = board.reduce((acc, cur) => acc + cur.join(""), "");
-    return crypto.createHash("sha1").update(data).digest("base64");
+    return boardToKey(board);
   }
 
   addBoardToHistory(state: GameState, board: Board): typeof state {
-    const eqBoardsHashes = Object.keys(this.getEquivalentBoards(board));
     const boardHistoryCopy: Record<string, number> = { ...state.boardHistory };
-    for (const boardHash of eqBoardsHashes) {
-      if (!(boardHash in boardHistoryCopy)) {
-        boardHistoryCopy[boardHash] = 0;
-      }
-      boardHistoryCopy[boardHash] += 1;
+    const boardKey = canonicalBoardKey(board);
+    if (!(boardKey in boardHistoryCopy)) {
+      boardHistoryCopy[boardKey] = 0;
     }
+    boardHistoryCopy[boardKey] += 1;
 
     return Object.assign({}, state, { boardHistory: boardHistoryCopy });
   }
 
   getEquivalentBoards(board: Board) {
-    const b = board.map(function (arr) {
-      return arr.slice();
-    });
+    const variants = getSymmetryVariants(board);
 
     const res: Record<string, Board> = {};
-    const bHash = this.getBoardHash(b);
-    if (!(bHash in res)) {
-      res[bHash] = b;
-    }
-
-    const rev = b.slice().reverse();
-    const revHash = this.getBoardHash(rev);
-    if (!(revHash in res)) {
-      res[revHash] = rev;
-    }
-
-    const b90 = rotateLeft(b);
-    const b90Hash = this.getBoardHash(b90);
-    if (!(b90Hash in res)) {
-      res[b90Hash] = b90;
-    }
-
-    const b180 = rotateLeft(b90);
-    const b180Hash = this.getBoardHash(b180);
-    if (!(b180Hash in res)) {
-      res[b180Hash] = b180;
-    }
-
-    const b270 = rotateLeft(b180);
-    const b270Hash = this.getBoardHash(b270);
-    if (!(b270Hash in res)) {
-      res[b270Hash] = b270;
-    }
-
-    const rev90 = rotateLeft(rev);
-    const rev90Hash = this.getBoardHash(rev90);
-    if (!(rev90Hash in res)) {
-      res[rev90Hash] = rev90;
-    }
-
-    const rev180 = rotateLeft(rev90);
-    const rev180Hash = this.getBoardHash(rev180);
-    if (!(rev180Hash in res)) {
-      res[rev180Hash] = rev180;
-    }
-
-    const rev270 = rotateLeft(rev180);
-    const rev270Hash = this.getBoardHash(rev270);
-    if (!(rev270Hash in res)) {
-      res[rev270Hash] = rev270;
+    for (const variant of variants) {
+      const hash = this.getBoardHash(variant);
+      if (!(hash in res)) {
+        res[hash] = variant;
+      }
     }
 
     return res;
@@ -1115,75 +1084,51 @@ export class Tafl implements Game {
     );
 
     const searchOnRow = kingCoords.r === 0 || kingCoords.r === board.length - 1;
-    const defendersOnSameSearchRowOrSearchCol = searchOnRow
-      ? possiblySurroundingDefendersCoords.filter(
-          (coords) => coords.r === kingCoords.r
-        )
-      : possiblySurroundingDefendersCoords.filter(
-          (coords) => coords.c === kingCoords.c
-        );
+    const onSameSearchLine = (coords: Coords) =>
+      searchOnRow ? coords.r === kingCoords.r : coords.c === kingCoords.c;
+    const beforeKing = (coords: Coords) =>
+      searchOnRow ? coords.c < kingCoords.c : coords.r < kingCoords.r;
+    const afterKing = (coords: Coords) =>
+      searchOnRow ? coords.c > kingCoords.c : coords.r > kingCoords.r;
 
-    const defendersBeforeKing = searchOnRow
-      ? defendersOnSameSearchRowOrSearchCol.filter(
-          (coords) => coords.c < kingCoords.c
-        )
-      : defendersOnSameSearchRowOrSearchCol.filter(
-          (coords) => coords.r < kingCoords.r
-        );
+    const defendersOnSearchLine = possiblySurroundingDefendersCoords.filter(
+      onSameSearchLine
+    );
+    const defendersBeforeKing = defendersOnSearchLine.filter(beforeKing);
+    const defendersAfterKing = defendersOnSearchLine.filter(afterKing);
 
-    const defendersAfterKing = searchOnRow
-      ? defendersOnSameSearchRowOrSearchCol.filter(
-          (coords) => coords.c > kingCoords.c
-        )
-      : defendersOnSameSearchRowOrSearchCol.filter(
-          (coords) => coords.r > kingCoords.r
-        );
-
-    // look for connected paths through before-after pieces
-    const startEnds: Array<Array<Coords>> = [];
+    // look for connected paths from a before-king piece to any after-king piece
+    const fortStarts: Array<Coords> = [];
     for (const defenderBeforeKing of defendersBeforeKing) {
       const defendersConnectedToThisDefender = this.connectedDefenders(
         board,
         defenderBeforeKing
       );
-      for (const defenderAfterKing of defendersAfterKing) {
-        const index = [...defendersConnectedToThisDefender].findIndex(
-          (el) => el === this.repr(defenderAfterKing)
-        );
-        if (index !== -1) {
-          startEnds.push([defenderBeforeKing, defenderAfterKing]);
-        }
+      const hasPathToAfterKing = defendersAfterKing.some((defenderAfterKing) =>
+        defendersConnectedToThisDefender.has(this.repr(defenderAfterKing))
+      );
+      if (hasPathToAfterKing) {
+        fortStarts.push(defenderBeforeKing);
       }
     }
 
-    if (startEnds.length < 1) {
+    if (fortStarts.length < 1) {
       return false;
     }
 
-    // for start/end pair of possible fort, get full structure
-    const fullStructuresWithPossibleDuplicates: Array<Set<String>> = [];
-    for (const startEnd of startEnds) {
-      const startingDefender = startEnd[0];
-      fullStructuresWithPossibleDuplicates.push(
-        this.connectedDefenders(board, startingDefender)
-      );
+    // deduplicate full structures by sorted coordinate repr list
+    const fullStructuresByKey = new Map<string, Set<String>>();
+    for (const startingDefender of fortStarts) {
+      const fullStructure = this.connectedDefenders(board, startingDefender);
+      const key = [...fullStructure].sort().join("->");
+      if (!fullStructuresByKey.has(key)) {
+        fullStructuresByKey.set(key, fullStructure);
+      }
     }
-
-    // deduplication
-    const fullStructures: Array<Set<String>> = [
-      ...new Set(
-        fullStructuresWithPossibleDuplicates
-          .map((fullStructure) => [...fullStructure].sort().map(this.coords))
-          .map((x) => this.toPathRepr(...x))
-      ),
-    ]
-      .map((x) => this.toPathCoords(x))
-      .map((x) => x.map((y) => this.repr(y)))
-      .map((x) => new Set(x));
+    const fullStructures = [...fullStructuresByKey.values()];
 
     // for full structure, find the pieces that can be taken and replace them with _
     // and check if remaining structure is still connected
-    let isAFort = true;
     for (const fullStructure of fullStructures) {
       const [innerSet, attackerSet] =
         this.getEmptyPiecesAndAttackersInsideSmallestFort(
@@ -1202,88 +1147,81 @@ export class Tafl implements Game {
       const weakCoordsInPossibleFort: Set<String> = new Set<String>();
       for (const repr of possibleSmallestFortStructure) {
         const possibleFortCoords = this.coords(repr);
-        const neighborsInOppositeDirections = [
-          [
-            { r: -1, c: 0 },
-            { r: 1, c: 0 },
-          ],
-          [
-            { r: 0, c: -1 },
-            { r: 0, c: 1 },
-          ],
-        ];
-        for (const oppositeNeighbors of neighborsInOppositeDirections) {
+        for (const oppositeNeighbors of OPPOSITE_NEIGHBOR_PAIRS) {
           let oppositeSum = 0;
           for (const neighbor of oppositeNeighbors) {
             const neighborCoords: Coords = {
               r: possibleFortCoords.r + neighbor.r,
               c: possibleFortCoords.c + neighbor.c,
             };
-            const insideBounds = this.insideBounds(board, neighborCoords);
-            if (insideBounds) {
-              const neighborRepr = this.repr(neighborCoords);
-              // increase opposite sum if NOT
-              // - is a defender or king OR
-              // - is inside the fort OR
-              // - is inside an eye
-              if (
-                !(
-                  this.isDefenderOrKing(board, neighborCoords) ||
-                  innerSet.has(neighborRepr) ||
-                  this.isInsideEye(board, neighborCoords, fullStructure)
-                )
-              ) {
-                oppositeSum += 1;
-              }
+            if (!this.insideBounds(board, neighborCoords)) {
+              continue;
+            }
 
-              if (oppositeSum > 1) {
-                weakCoordsInPossibleFort.add(repr);
-              }
+            const neighborRepr = this.repr(neighborCoords);
+            // increase opposite sum if NOT
+            // - is a defender or king OR
+            // - is inside the fort OR
+            // - is inside an eye
+            if (
+              !(
+                this.isDefenderOrKing(board, neighborCoords) ||
+                innerSet.has(neighborRepr) ||
+                this.isInsideEye(board, neighborCoords, fullStructure)
+              )
+            ) {
+              oppositeSum += 1;
+            }
+
+            if (oppositeSum > 1) {
+              weakCoordsInPossibleFort.add(repr);
             }
           }
         }
       }
 
       if (weakCoordsInPossibleFort.size > 0) {
-        const boardCopy = board.map(function (row) {
-          return row.slice();
-        });
+        const boardCopy = cloneBoard(board);
 
         [...weakCoordsInPossibleFort].forEach((weakRepr) => {
           const weakCoords = this.coords(weakRepr);
           boardCopy[weakCoords.r][weakCoords.c] = Piece.__;
         });
 
-        isAFort = isAFort && this.fortSearchFromKing(boardCopy, kingCoords);
+        if (!this.fortSearchFromKing(boardCopy, kingCoords)) {
+          return false;
+        }
       }
     }
 
     // if any structure makes it this far, it must be a fort
-    return isAFort;
+    return true;
   }
 
   public getPossibleActions(
     state: GameState,
     side: TaflSide = this.turnSide(state)
   ): Array<MoveAction> {
-    const res: Array<MoveAction> = [];
+    if (!state.board) {
+      return [];
+    }
 
-    for (const _r in state.board) {
-      const r = parseInt(_r, 10);
-      const row = state.board[r];
-      for (const _c in row) {
-        const c = parseInt(_c, 10);
+    const res: Array<MoveAction> = [];
+    const board = state.board;
+    const controlPieces = this.controlMap.get(side);
+    for (let r = 0; r < board.length; r += 1) {
+      const row = board[r];
+      for (let c = 0; c < row.length; c += 1) {
         const piece = row[c];
-        if (this.canControl(side, piece)) {
+        if (controlPieces?.has(piece)) {
           const coords: Coords = { r, c };
           const movesFrom = this.getPossibleMovesFrom(state, coords);
-          movesFrom.forEach((toCoords) => {
-            const moveAction: MoveAction = {
+          for (let i = 0; i < movesFrom.length; i += 1) {
+            res.push({
               from: coords,
-              to: toCoords,
-            };
-            res.push(moveAction);
-          });
+              to: movesFrom[i],
+            });
+          }
         }
       }
     }
@@ -1295,6 +1233,15 @@ export class Tafl implements Game {
     if (!state.board) {
       return false;
     }
+    const board = state.board;
+
+    if (
+      !this.insideBounds(board, act.from) ||
+      !this.insideBounds(board, act.to)
+    ) {
+      this.log("Move is outside board bounds");
+      return false;
+    }
 
     if (act.from.r !== act.to.r && act.from.c !== act.to.c) {
       this.log("Move should be in the same row or column");
@@ -1302,8 +1249,8 @@ export class Tafl implements Game {
     }
 
     const f = act.from;
-    const from = this.pieceAt(state.board, f);
-    if (this.isEmpty(state.board, f)) {
+    const from = this.pieceAt(board, f);
+    if (from === Piece.__) {
       this.log(`There is no piece at [${f.r}, ${f.c}]`);
       return false;
     }
@@ -1315,22 +1262,31 @@ export class Tafl implements Game {
     }
 
     const t = act.to;
-    if (!this.isEmpty(state.board, t)) {
+    if (!this.isEmpty(board, t)) {
       this.log(`There is already a piece at [${t.r}, ${t.c}]`);
       return false;
     }
 
-    const possibleCoords = this.getPossibleMovesFrom(state, f);
-
-    const isPossible = possibleCoords.find(
-      (pc) => pc.r === t.r && pc.c === t.c
-    );
-    if (isPossible) {
-      return true;
+    const rowMove = f.r === t.r;
+    const dr = rowMove ? 0 : t.r > f.r ? 1 : -1;
+    const dc = rowMove ? (t.c > f.c ? 1 : -1) : 0;
+    let curR = f.r + dr;
+    let curC = f.c + dc;
+    while (curR !== t.r || curC !== t.c) {
+      if (!this.canMovePieceHere(state, from, { r: curR, c: curC })) {
+        this.log(`Move [${f.r}, ${f.c}] -> [${t.r}, ${t.c}] is not possible`);
+        return false;
+      }
+      curR += dr;
+      curC += dc;
     }
 
-    this.log(`Move [${f.r}, ${f.c}] -> [${t.r}, ${t.c}] is not possible`);
-    return false;
+    if (!this.canMovePieceHere(state, from, t)) {
+      this.log(`Move [${f.r}, ${f.c}] -> [${t.r}, ${t.c}] is not possible`);
+      return false;
+    }
+
+    return true;
   }
 
   public isGameOver(state: GameState): typeof state {
@@ -1350,7 +1306,7 @@ export class Tafl implements Game {
 
     if (
       state.rules?.[TaflRule.SAVE_BOARD_HISTORY]! &&
-      state.boardHistory?.[this.getBoardHash(state.board)]! ===
+      state.boardHistory?.[canonicalBoardKey(state.board)]! ===
         state.rules?.[TaflRule.REPETITION_TURN_LIMIT]!
     ) {
       return Object.assign({}, state, {
@@ -1534,9 +1490,7 @@ export class Tafl implements Game {
       return state;
     }
 
-    const boardCopy = state.board.map(function (row) {
-      return row.slice();
-    });
+    const boardCopy = cloneBoard(state.board);
 
     const fr = moveAction.from.r;
     const fc = moveAction.from.c;

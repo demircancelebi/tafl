@@ -23,14 +23,14 @@ test("Equivalent board tests", () => {
 
   const eqBoards = Object.keys(tafl.getEquivalentBoards(board)).sort();
   const expected = [
-    "/zbudGFJC8HrstoS2NWNqyvfKc8=",
-    "15W1cUYEc5baV7dUNLeuMBctqM8=",
-    "RR3Gy+lDjfX1bt1/J0449OPGb+M=",
-    "U0S5M0XDMwGVwJ/BkLpRq38IH0o=",
-    "kbXQRwXLlHl/LHoqeNRv0iZXTts=",
-    "o1u/DYfX1dTpQQc0GTZ+noFtqlE=",
-    "uVsBzvtaZgHIh8lPweRvEqnD+tw=",
-    "xdop3BSra7ed3zV75lmiXb5q/+U=",
+    "           | AA      D | AA     D  |       D   |           |     K     |           |           | D         | A         | D     ADA ",
+    "           | AA     DAD| AA        |           |           |     K     |           |   D      A|  D       D| D        A|           ",
+    "           | D        A|  D       D|   D      A|           |     K     |           |           | AA        | AA     DAD|           ",
+    "           | D      AA |  D     AA |   D       |           |     K     |           |           |         D |         A | ADA     D ",
+    "           |A        D |D       D  |A      D   |           |     K     |           |           |        AA |DAD     AA |           ",
+    "           |DAD     AA |        AA |           |           |     K     |           |A      D   |D       D  |A        D |           ",
+    " ADA     D |         A |         D |           |           |     K     |           |   D       |  D     AA | D      AA |           ",
+    " D     ADA | A         | D         |           |           |     K     |           |       D   | AA     D  | AA      D |           ",
   ];
 
   expect(eqBoards).toEqual(expected);
