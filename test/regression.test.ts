@@ -173,3 +173,43 @@ test("custom init board/rules should remain isolated across created states", () 
   expect(customBoard[2][2]).toBe(originalBoardCenter);
   expect(customRules[TaflRule.EDGE_ESCAPE]).toBe(originalEdgeEscape);
 });
+
+test("Alea Evangelii preset should default to 2x2 corners", () => {
+  const tafl = new Tafl();
+  const state = tafl.initialState({ board: TaflBoard._19_ALEA_EVANGELII });
+
+  expect(state.rules![TaflRule.CORNER_BASE_WIDTH]).toBe(2);
+  expect(tafl.isCorner(state, { r: 0, c: 0 })).toBe(true);
+  expect(tafl.isCorner(state, { r: 0, c: 1 })).toBe(true);
+  expect(tafl.isCorner(state, { r: 1, c: 0 })).toBe(true);
+  expect(tafl.isCorner(state, { r: 1, c: 1 })).toBe(true);
+  expect(tafl.isCorner(state, { r: 0, c: 2 })).toBe(false);
+  expect(tafl.isCorner(state, { r: 2, c: 0 })).toBe(false);
+  expect(tafl.isCorner(state, { r: 2, c: 2 })).toBe(false);
+});
+
+test("Alea Evangelii board copies should default to 2x2 corners", () => {
+  const tafl = new Tafl();
+  const copiedAleaBoard = TaflBoard._19_ALEA_EVANGELII.map((row) =>
+    row.slice()
+  );
+  const state = tafl.initialState({ board: copiedAleaBoard });
+
+  expect(state.rules![TaflRule.CORNER_BASE_WIDTH]).toBe(2);
+  expect(tafl.isCorner(state, { r: 1, c: 1 })).toBe(true);
+});
+
+test("explicit rules should override Alea Evangelii board defaults", () => {
+  const tafl = new Tafl();
+  const state = tafl.initialState({
+    board: TaflBoard._19_ALEA_EVANGELII,
+    rules: {
+      ...TaflRuleSet.COPENHAGEN,
+      [TaflRule.CORNER_BASE_WIDTH]: 1,
+    },
+  });
+
+  expect(state.rules![TaflRule.CORNER_BASE_WIDTH]).toBe(1);
+  expect(tafl.isCorner(state, { r: 0, c: 0 })).toBe(true);
+  expect(tafl.isCorner(state, { r: 0, c: 1 })).toBe(false);
+});

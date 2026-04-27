@@ -88,6 +88,11 @@ You can pass a custom board to the `tafl.initialState`. Here are some of the sta
 - `TaflBoard._15_DAMIEN_WALKER`
 - `TaflBoard._19_ALEA_EVANGELII`
 
+Recognized preset boards may apply board-specific default rules when passed to
+`tafl.initialState`. For example, `TaflBoard._19_ALEA_EVANGELII` defaults
+`TaflRule.CORNER_BASE_WIDTH` to `2`. Explicit `rules` passed to
+`tafl.initialState` still take precedence.
+
 ### TaflRule
 Used as an enum, and maps to string values. Use these to change the behavior of the game. See examples for usage.
 

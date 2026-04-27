@@ -281,6 +281,19 @@ function canonicalBoardKey(board: Board): string {
   return key;
 }
 
+function getBoardRuleOverrides(board: Board): GameState["rules"] {
+  if (
+    board === TaflBoard._19_ALEA_EVANGELII ||
+    boardToKey(board) === boardToKey(TaflBoard._19_ALEA_EVANGELII)
+  ) {
+    return {
+      [TaflRule.CORNER_BASE_WIDTH]: 2,
+    };
+  }
+
+  return {};
+}
+
 const OPPOSITE_NEIGHBOR_PAIRS: ReadonlyArray<ReadonlyArray<Coords>> = [
   [
     { r: -1, c: 0 },
@@ -311,6 +324,7 @@ export class Tafl implements Game {
     const board = cloneBoard(sourceBoard);
     const rules = {
       ...TaflRuleSet.COPENHAGEN,
+      ...getBoardRuleOverrides(sourceBoard),
       ...(init?.rules || {}),
     };
     const historyKey = canonicalBoardKey(board);
