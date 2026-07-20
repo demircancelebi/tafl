@@ -630,10 +630,29 @@ export class Tafl implements Game {
     );
   }
 
-  insideFort(board: Board, kingCoords: Coords): boolean {
+  insideFort(
+    board: Board,
+    kingCoords: Coords,
+    kingCanReturnToCenter: boolean = true
+  ): boolean {
     const onTopOrBottom = kingCoords.r === 0 || kingCoords.r === board.length - 1;
     const onLeftOrRight = kingCoords.c === 0 || kingCoords.c === board.length - 1;
     if (!onTopOrBottom && !onLeftOrRight) {
+      return false;
+    }
+
+    const kingCanMove = ORTHOGONAL_DIRECTIONS.some((direction) => {
+      const destination = {
+        r: kingCoords.r + direction.r,
+        c: kingCoords.c + direction.c,
+      };
+      return (
+        this.insideBounds(board, destination) &&
+        this.isEmpty(board, destination) &&
+        (kingCanReturnToCenter || !this.isCenter(board, destination))
+      );
+    });
+    if (!kingCanMove) {
       return false;
     }
 
@@ -652,22 +671,25 @@ export class Tafl implements Game {
   }
 
   kingEscapedThroughFort(state: GameState): boolean {
-    const lastTo = state.lastAction?.to;
-    if (!lastTo || !state.board) {
+    if (!state.board) {
       return false;
     }
 
-    const king = this.isKing(state.board, lastTo);
-    if (!king) {
+    const kingCoords = this.getKingCoords(state.board);
+    if (!kingCoords) {
       return false;
     }
 
-    const onEdge = this.isEdge(state, lastTo);
+    const onEdge = this.isEdge(state, kingCoords);
     if (!onEdge) {
       return false;
     }
 
-    return this.insideFort(state.board, lastTo);
+    return this.insideFort(
+      state.board,
+      kingCoords,
+      !!state.rules?.[TaflRule.KING_CAN_RETURN_TO_CENTER]
+    );
   }
 
   isBase(state: GameState, coords: Coords): boolean {
@@ -1499,18 +1521,19 @@ export class Tafl implements Game {
         });
       }
 
-      const fortEscape =
-        state.rules?.[TaflRule.EXIT_FORTS]! &&
-        this.kingEscapedThroughFort(state);
-      if (fortEscape) {
-        return Object.assign({}, state, {
-          result: {
-            finished: true,
-            winner: TaflSide.DEFENDER,
-            desc: "King escaped through exit fort",
-          },
-        });
-      }
+    }
+
+    const fortEscape =
+      state.rules?.[TaflRule.EXIT_FORTS]! &&
+      this.kingEscapedThroughFort(state);
+    if (fortEscape) {
+      return Object.assign({}, state, {
+        result: {
+          finished: true,
+          winner: TaflSide.DEFENDER,
+          desc: "King escaped through exit fort",
+        },
+      });
     }
 
     const canOpponentMove = this.canMakeAMove(state, this.opponentSide(state));
