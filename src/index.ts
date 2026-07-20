@@ -193,11 +193,18 @@ export class TaflSide extends String {
   static readonly DEFENDER = "Defender";
 }
 
+export class TaflRepetitionOutcome extends String {
+  static readonly DRAW = "draw";
+  static readonly DEFENDER_LOSES = "defender-loses";
+  static readonly MOVER_LOSES = "mover-loses";
+}
+
 export class TaflRule {
   static readonly KING_IS_ARMED = "kingIsArmed";
   static readonly KING_CAN_RETURN_TO_CENTER = "kingCanReturnToCenter";
   static readonly ATTACKER_COUNT_TO_CAPTURE = "attackerCountToCapture";
   static readonly REPETITION_TURN_LIMIT = "repetitionTurnLimit";
+  static readonly REPETITION_OUTCOME = "repetitionOutcome";
   static readonly SHIELD_WALLS = "shieldWalls";
   static readonly EXIT_FORTS = "exitForts";
   static readonly EDGE_ESCAPE = "edgeEscape";
@@ -213,6 +220,7 @@ export class TaflRuleSet {
     [TaflRule.KING_CAN_RETURN_TO_CENTER]: true,
     [TaflRule.ATTACKER_COUNT_TO_CAPTURE]: 4,
     [TaflRule.REPETITION_TURN_LIMIT]: 3,
+    [TaflRule.REPETITION_OUTCOME]: TaflRepetitionOutcome.DEFENDER_LOSES,
     [TaflRule.SHIELD_WALLS]: true,
     [TaflRule.EXIT_FORTS]: true,
     [TaflRule.EDGE_ESCAPE]: false,
@@ -1331,11 +1339,26 @@ export class Tafl implements Game {
       state.boardHistory?.[canonicalBoardKey(state.board)]! ===
         state.rules?.[TaflRule.REPETITION_TURN_LIMIT]!
     ) {
+      const repetitionOutcome =
+        state.rules?.[TaflRule.REPETITION_OUTCOME] ||
+        TaflRepetitionOutcome.DRAW;
+      const winner =
+        repetitionOutcome === TaflRepetitionOutcome.DEFENDER_LOSES
+          ? TaflSide.ATTACKER
+          : repetitionOutcome === TaflRepetitionOutcome.MOVER_LOSES
+          ? this.opponentSide(state)
+          : null;
+      const desc =
+        repetitionOutcome === TaflRepetitionOutcome.DEFENDER_LOSES
+          ? "Defender loses on repetition"
+          : repetitionOutcome === TaflRepetitionOutcome.MOVER_LOSES
+          ? "Mover loses on repetition"
+          : "Draw on repetition";
       return Object.assign({}, state, {
         result: {
           finished: true,
-          winner: null,
-          desc: "Draw on repetition",
+          winner,
+          desc,
         },
       });
     }
