@@ -759,36 +759,44 @@ export class Tafl implements Game {
     let rowCount = row - 1;
     while (
       rowCount >= 0 &&
-      this.canMovePieceHere(state, piece, { r: rowCount, c: col })
+      this.isEmpty(state.board, { r: rowCount, c: col })
     ) {
-      res.push({ r: rowCount, c: col });
+      if (this.canMovePieceHere(state, piece, { r: rowCount, c: col })) {
+        res.push({ r: rowCount, c: col });
+      }
       rowCount -= 1;
     }
 
     rowCount = row + 1;
     while (
       rowCount <= n - 1 &&
-      this.canMovePieceHere(state, piece, { r: rowCount, c: col })
+      this.isEmpty(state.board, { r: rowCount, c: col })
     ) {
-      res.push({ r: rowCount, c: col });
+      if (this.canMovePieceHere(state, piece, { r: rowCount, c: col })) {
+        res.push({ r: rowCount, c: col });
+      }
       rowCount += 1;
     }
 
     let colCount = col - 1;
     while (
       colCount >= 0 &&
-      this.canMovePieceHere(state, piece, { r: row, c: colCount })
+      this.isEmpty(state.board, { r: row, c: colCount })
     ) {
-      res.push({ r: row, c: colCount });
+      if (this.canMovePieceHere(state, piece, { r: row, c: colCount })) {
+        res.push({ r: row, c: colCount });
+      }
       colCount -= 1;
     }
 
     colCount = col + 1;
     while (
       colCount <= n - 1 &&
-      this.canMovePieceHere(state, piece, { r: row, c: colCount })
+      this.isEmpty(state.board, { r: row, c: colCount })
     ) {
-      res.push({ r: row, c: colCount });
+      if (this.canMovePieceHere(state, piece, { r: row, c: colCount })) {
+        res.push({ r: row, c: colCount });
+      }
       colCount += 1;
     }
 
@@ -1287,7 +1295,7 @@ export class Tafl implements Game {
     let curR = f.r + dr;
     let curC = f.c + dc;
     while (curR !== t.r || curC !== t.c) {
-      if (!this.canMovePieceHere(state, from, { r: curR, c: curC })) {
+      if (!this.isEmpty(board, { r: curR, c: curC })) {
         this.log(`Move [${f.r}, ${f.c}] -> [${t.r}, ${t.c}] is not possible`);
         return false;
       }
