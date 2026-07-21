@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [4.0.0](https://github.com/demircancelebi/tafl/compare/v3.0.1...v4.0.0) (2026-07-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* games played with TaflRuleSet.COPENHAGEN that reach
+threefold repetition now end as an attacker win instead of a draw.
+Set [TaflRule.REPETITION_OUTCOME]: TaflRepetitionOutcome.DRAW to
+retain the old behavior.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+### Features
+
+* configurable repetition outcome, Copenhagen defaults to defender loss ([fe2abe0](https://github.com/demircancelebi/tafl/commit/fe2abe0879fdd0ef3a326ae1b0aaedb93c49252d))
+
+
+### Bug Fixes
+
+* allow pieces to pass through the empty throne ([6af23be](https://github.com/demircancelebi/tafl/commit/6af23bec4b6bf68d95b309a8692b02ea3e07258e))
+* positional exit-fort detection with explicit king-mobility check ([e86d862](https://github.com/demircancelebi/tafl/commit/e86d8620a569a0ce75e2f9beef9bea9227928390))
+
 ### [3.0.1](https://github.com/demircancelebi/tafl/compare/v3.0.0...v3.0.1) (2026-04-27)
 
 
