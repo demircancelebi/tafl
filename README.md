@@ -4,6 +4,10 @@ A Typescript library for Hnefatafl (Viking Chess, or Tafl) that is used for move
 
 You can use it to simulate games between AI agents - although you need to write the agents yourself :)
 
+## Rust port
+
+If you want the same engine in Rust, check out [`tafl-rs`](https://github.com/demircancelebi/tafl-rs) ([crates.io](https://crates.io/crates/tafl-rs)): a port of this library with the same Copenhagen rules, kept in conformance with this package, plus a fast playout engine that reaches ~20M plies per second on one core for bulk simulations.
+
 ## Installation
 
 ```
